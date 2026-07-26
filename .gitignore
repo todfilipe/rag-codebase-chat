@@ -42,3 +42,11 @@ next-env.d.ts
 
 # roadmap
 CLAUDE.md
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
