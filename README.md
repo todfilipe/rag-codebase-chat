@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RAG Codebase Chat
 
-## Getting Started
+Indexa um repositório do GitHub e responde a perguntas em linguagem natural sobre
+o código dele, citando os ficheiros em que se baseou.
 
-First, run the development server:
+O RAG é construído de raiz — chunking, embeddings, pesquisa vectorial e prompt —
+sem LangChain nem afins.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Arquitectura
+
+O projeto está partido em duas camadas com uma fronteira explícita:
+
+```
+┌──────────────────────────────┐        ┌──────────────────────────────┐
+│  Next.js  (TypeScript)       │        │  rag-service  (Python)       │
+│                              │        │                              │
+│  UI                          │  HTTP  │  GitHub API                  │
+│  /api/index, /api/chat       │ ─────► │  chunking + embeddings       │
+│  validação de input          │        │  pesquisa vectorial          │
+│  (auth, quotas, billing)     │        │  geração da resposta         │
+└──────────────────────────────┘        └──────────────┬───────────────┘
+                                                       │
+                                        ┌──────────────┴───────────────┐
+                                        │  GitHub · Gemini · Supabase  │
+                                        └──────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O Next.js é a camada de produto: nunca fala com a Gemini, com a GitHub nem com o
+Supabase. Fala só com o serviço Python, através de `lib/rag-client.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+O serviço Python é o núcleo de RAG e não sabe nada sobre utilizadores, sessões ou
+planos. É interno — cada pedido tem de trazer o header `X-Internal-Token`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O porquê desta separação está em [`decisions.md`](./decisions.md).
 
-## Learn More
+## Fluxo
 
-To learn more about Next.js, take a look at the following resources:
+**Indexar** — `POST /api/index` com `{"githubUrl": "..."}`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Lista a árvore do branch principal do repo.
+2. Filtra: só código e texto, até 100 KB, fora de `node_modules`, `dist` e afins.
+3. Parte cada ficheiro em chunks de 2000 chars com 200 de overlap.
+4. Gera um embedding por chunk (Gemini, 768 dimensões).
+5. Guarda tudo em `code_chunks`, substituindo o índice anterior do repo.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Perguntar** — `POST /api/chat` com `{"question": "...", "repoId": "..."}`
 
-## Deploy on Vercel
+1. Gera o embedding da pergunta.
+2. Vai buscar os top-k chunks do repo por similaridade (`match_chunks`, pgvector).
+3. Monta o prompt com esses excertos e pede a resposta à Gemini.
+4. Devolve a resposta e a lista de ficheiros usados.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Camada    | Tecnologia                                           |
+| --------- | ---------------------------------------------------- |
+| Front-end | Next.js 16, React 19, Tailwind 4                     |
+| Serviço   | Python 3.11+, FastAPI, httpx, uv                     |
+| Dados     | Supabase (Postgres + pgvector)                       |
+| Modelos   | `gemini-embedding-2` (768d), `gemini-3.1-flash-lite` |
+
+## Correr em local
+
+São dois processos. Primeiro o serviço Python:
+
+```bash
+cd rag-service
+cp .env.example .env      # preencher as chaves
+uv sync --all-groups
+uv run uvicorn app.main:app --reload    # http://localhost:8000
+```
+
+Depois o Next.js, noutro terminal e a partir da raiz:
+
+```bash
+cp .env.example .env.local    # RAG_SERVICE_URL + o mesmo RAG_SERVICE_TOKEN
+npm install
+npm run dev                   # http://localhost:3000
+```
+
+Alternativa para o serviço Python: `docker compose up rag-service`.
+
+## Variáveis de ambiente
+
+| Onde                | Variável                    | Para quê                            |
+| ------------------- | --------------------------- | ----------------------------------- |
+| `rag-service/.env`  | `GEMINI_API_KEY`            | embeddings e geração                |
+| `rag-service/.env`  | `GITHUB_TOKEN`              | ler repositórios                    |
+| `rag-service/.env`  | `SUPABASE_URL`              | base de dados                       |
+| `rag-service/.env`  | `SUPABASE_SERVICE_ROLE_KEY` | base de dados                       |
+| `rag-service/.env`  | `RAG_SERVICE_TOKEN`         | segredo partilhado entre as camadas |
+| `.env.local` (raiz) | `RAG_SERVICE_URL`           | onde está o serviço Python          |
+| `.env.local` (raiz) | `RAG_SERVICE_TOKEN`         | o mesmo segredo, do lado do Next    |
+
+## Testes e qualidade
+
+```bash
+cd rag-service && uv run pytest && uv run ruff check . && uv run mypy
+npm run lint && npm run build
+```
+
+## Estado
+
+Feito: pipeline de indexação, pesquisa vectorial, geração de respostas, e os
+endpoints que expõem as duas coisas.
+
+Por fazer: a UI de chat (`app/page.tsx` ainda é o boilerplate do Next),
+autenticação, e limites de utilização por utilizador.

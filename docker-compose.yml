@@ -1,0 +1,10 @@
+services:
+  rag-service:
+    build: ./rag-service
+    env_file: ./rag-service/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Recarrega o serviço ao editar o código, sem reconstruir a imagem.
+      - ./rag-service/app:/srv/app:ro
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
