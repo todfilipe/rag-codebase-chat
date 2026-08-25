@@ -68,7 +68,7 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 
 **Está pronto quando:** uma pergunta feita no browser passa por `web → rag-service → Gemini`, com a resposta a chegar em streaming, e nenhuma chamada direta a Supabase/Gemini para RAG resta em `apps/web`.
 
-- [ ] Apagar o pipeline TS de `apps/web` (`lib/{chunker,gemini,generator,github,indexer,retriever}.ts` e as rotas `app/api/test-*`), que continuam a falar diretamente com o Supabase e o Gemini. Enquanto existirem, a segunda metade do critério acima não está cumprida. O código fica no histórico do git.
+- [x] Apagar o pipeline TS de `apps/web` (`lib/{chunker,gemini,generator,github,indexer,retriever}.ts` e as rotas `app/api/test-*`) — feito em 25-08-2026. O `apps/web` fica sem uma única chamada direta ao Supabase ou ao Gemini: só `lib/rag-service.ts` e os três Route Handlers de proxy. O código antigo fica no histórico do git, que é onde deve estar.
 
 **Modelo sugerido:** opus 5 — é lógica de fronteira entre sistemas, com implicações de segurança (token interno) que vale a pena pensar com cuidado.
 
