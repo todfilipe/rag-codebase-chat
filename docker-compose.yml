@@ -2,6 +2,16 @@ services:
   rag-service:
     build: ./apps/rag-service
     env_file: ./apps/rag-service/.env
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://localhost:8000/health")
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   web:
@@ -17,5 +27,6 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
-      - rag-service
+      rag-service:
+        condition: service_healthy
     restart: unless-stopped

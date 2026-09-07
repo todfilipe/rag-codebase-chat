@@ -1,6 +1,20 @@
 # Variáveis de Ambiente
 
-> Referência única para todas as variáveis de ambiente do monorepo, nos dois serviços. Cada serviço tem o seu próprio `.env.local` (Next.js) / `.env` (FastAPI) — nunca commitados, ambos cobertos pelo `.gitignore`.
+> Referência única para todas as variáveis de ambiente do monorepo. Cada serviço tem o seu próprio `.env.local` (Next.js) / `.env` (FastAPI), e a raiz tem um terceiro `.env` que só o `docker compose` lê. Nenhum é commitado, todos cobertos pelo `.gitignore`; a única exceção é o `.env.example` da raiz, que é template e não tem valores.
+
+## Raiz do monorepo (`docker compose`)
+
+O `docker-compose.yml` interpola três variáveis (`${NEXT_PUBLIC_SUPABASE_URL}`, `${NEXT_PUBLIC_SUPABASE_ANON_KEY}`, `${NEXT_PUBLIC_SITE_URL}`) e passa-as como **build args** à imagem do `web`. Copiar `.env.example` para `.env` na raiz e preencher antes do primeiro `docker compose build`.
+
+| Variável | Descrição |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | O mesmo valor do `.env.local` do `web`. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Idem. |
+| `NEXT_PUBLIC_SITE_URL` | Em produção é o domínio real (o Stripe usa-o no `success_url`), não `localhost`. |
+
+Porque é que estas três estão duplicadas entre o `.env` da raiz e o `.env.local` do `web`, e porque é que não podem vir do `env_file:`: o Next substitui `process.env.NEXT_PUBLIC_*` pelo valor literal **no momento do build**, incluindo em código de servidor. Um valor injetado só em runtime chega tarde de mais e o bundle fica com as variáveis vazias. E `env_file:` só alimenta o contentor em runtime, nunca o build, por isso os build args são a única via. O `.env.local` continua a ser preciso porque contém todas as outras variáveis, essas sim lidas em runtime.
+
+Se as três faltarem, o build falha em `lib/supabase/env.ts`, que faz `throw` explícito. É o comportamento desejado: uma imagem construída sem elas arrancaria e só partia no browser do primeiro utilizador.
 
 ## `apps/web` (Next.js)
 
@@ -12,7 +26,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | O mesmo URL, exposto ao cliente porque o SDK de auth corre também no browser. | Fase 4 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave pública do Supabase. É desenhada para ser exposta: sozinha não dá acesso a nada, quem manda são as policies de RLS. | Fase 4 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Acesso total, ignora RLS. Nunca expor no cliente. Uso pós-migração limitado a operações que não são RAG (ex: dashboard a listar repos do utilizador). | Protótipo |
-| `RAG_SERVICE_URL` | URL interna do `rag-service` (ex: `https://rag-service.internal.railway.app`). | Fase 2 |
+| `RAG_SERVICE_URL` | URL interna do `rag-service`. Em desenvolvimento fora do compose, `http://localhost:8000`. Sob `docker compose`, é `http://rag-service:8000` e vem já definida no `environment:` do serviço `web`, não do `.env.local`. | Fase 2 |
 | `RAG_SERVICE_INTERNAL_TOKEN` | Token partilhado enviado em `Authorization: Bearer` em todo pedido ao `rag-service`. Ver `docs/API-CONTRACT.md`. Gerar com algo como `openssl rand -hex 32`; rodar se alguma vez for exposto. | Fase 2 |
 | ~~`CLERK_SECRET_KEY`~~ / ~~`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`~~ | **Nunca chegaram a existir.** A Fase 4 ficou com Supabase Auth, não Clerk (decisão de 25-08-2026 em `decisions.md`). | — |
 | ~~`GITHUB_OAUTH_CLIENT_ID`~~ / ~~`GITHUB_OAUTH_CLIENT_SECRET`~~ | Também não vivem aqui. Com Supabase Auth, as credenciais da GitHub OAuth App são coladas no painel do Supabase (Authentication → Providers), não no `.env.local`. | — |
