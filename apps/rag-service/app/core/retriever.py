@@ -20,11 +20,14 @@ class RetrievedChunk:
     content: str
     start_offset: int
     end_offset: int
+    # Nulas nos chunks indexados antes da migration 0003 (ver o comentário lá).
+    start_line: int | None
+    end_line: int | None
     similarity: float
 
 
 async def retrieve_chunks(
-    question: str, repo_id: str, k: int = DEFAULT_K
+    question: str, repo_id: str, user_id: str, k: int = DEFAULT_K
 ) -> list[RetrievedChunk]:
     """A pergunta passa pelo mesmo modelo de embedding que indexou o código: é isso
     que põe pergunta e chunks no mesmo espaço vetorial e torna a comparação possível."""
@@ -37,6 +40,7 @@ async def retrieve_chunks(
             json={
                 "query_embedding": query_embedding,
                 "match_repo_id": repo_id,
+                "match_user_id": user_id,
                 "match_count": k,
             },
         )

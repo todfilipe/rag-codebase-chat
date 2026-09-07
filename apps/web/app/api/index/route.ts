@@ -1,10 +1,19 @@
+import { parseGithubRepoUrl } from "@/lib/github-url";
+import { checkRepoLimit } from "@/lib/limits";
 import {
   INDEX_TIMEOUT_MS,
   callRagService,
   serviceErrorResponse,
 } from "@/lib/rag-service";
+import { requireUser } from "@/lib/supabase/require-user";
+import { hasRepo } from "@/lib/usage";
 
 export async function POST(request: Request) {
+  const user = await requireUser();
+  if (user instanceof Response) {
+    return user;
+  }
+
   let repoUrl: unknown;
 
   try {
@@ -25,12 +34,24 @@ export async function POST(request: Request) {
     );
   }
 
+  const parsed = parseGithubRepoUrl(repoUrl.trim());
+
+  if (parsed) {
+    const limit = await checkRepoLimit(
+      !(await hasRepo(parsed.owner, parsed.repo))
+    );
+
+    if (limit) {
+      return Response.json(limit, { status: 402 });
+    }
+  }
+
   try {
     // Propagar o abort do browser aqui é seguro: este pedido só cobre a validação e
     // a listagem da árvore. A indexação em si já não vive nesta ligação — vive numa
     // task do rag-service, e sobrevive ao separador fechar.
     const upstream = await callRagService("/index", {
-      body: { repo_url: repoUrl.trim(), user_id: null },
+      body: { repo_url: repoUrl.trim(), user_id: user.id },
       timeoutMs: INDEX_TIMEOUT_MS,
       clientSignal: request.signal,
     });

@@ -14,8 +14,8 @@ router = APIRouter(prefix="/diagnostics")
 
 
 @router.get("/retrieve")
-async def retrieve(q: str, repo_id: str):
-    chunks = await retrieve_chunks(q, repo_id)
+async def retrieve(q: str, repo_id: str, user_id: str):
+    chunks = await retrieve_chunks(q, repo_id, user_id)
     return {
         "question": q,
         "repo_id": repo_id,
@@ -33,8 +33,8 @@ async def retrieve(q: str, repo_id: str):
 
 
 @router.get("/generate")
-async def generate(q: str, repo_id: str):
-    chunks = await retrieve_chunks(q, repo_id)
+async def generate(q: str, repo_id: str, user_id: str):
+    chunks = await retrieve_chunks(q, repo_id, user_id)
 
     if not chunks:
         return JSONResponse(

@@ -1,10 +1,18 @@
+import { checkMessageLimit } from "@/lib/limits";
 import {
   QUERY_TIMEOUT_MS,
   callRagService,
   serviceErrorResponse,
 } from "@/lib/rag-service";
+import { requireUser } from "@/lib/supabase/require-user";
+import { addMessageUsage } from "@/lib/usage";
 
 export async function POST(request: Request) {
+  const user = await requireUser();
+  if (user instanceof Response) {
+    return user;
+  }
+
   let repoId: unknown;
   let question: unknown;
 
@@ -24,6 +32,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const limit = await checkMessageLimit();
+
+  if (limit) {
+    return Response.json(limit, { status: 402 });
+  }
+
+  await addMessageUsage(user.id);
+
   try {
     // O abort do browser é propagado de propósito: a resposta gerada não é guardada
     // em lado nenhum, por isso continuar a gerar depois de o separador fechar era só
@@ -31,7 +47,7 @@ export async function POST(request: Request) {
     // persistir o histórico de mensagens, isto passa a fazer sentido ao contrário —
     // deixar acabar e gravar — e a mudança é não passar aqui o clientSignal.
     const upstream = await callRagService("/query", {
-      body: { repo_id: repoId, question: question.trim(), user_id: null },
+      body: { repo_id: repoId, question: question.trim(), user_id: user.id },
       timeoutMs: QUERY_TIMEOUT_MS,
       clientSignal: request.signal,
     });

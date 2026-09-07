@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -15,14 +17,15 @@ from app.core.supabase import create_supabase_client
 
 router = APIRouter()
 
-STATUS_FIELDS = "id,index_stage,files_found,chunks_processed,chunks_total,index_error"
+STATUS_FIELDS = (
+    "id,owner,repo,index_stage,files_found,chunks_processed,chunks_total,index_error"
+)
 
 
 class IndexRequest(BaseModel):
     repo_url: str
-    # Faz parte do contrato desde já (docs/API-CONTRACT.md), mas só passa a ser
-    # usado na Fase 4. Até lá chega sempre nulo e é ignorado.
     user_id: str | None = None
+    force: bool = False
 
 
 def _error(status: int, code: str, message: str) -> JSONResponse:
@@ -33,8 +36,21 @@ def _error(status: int, code: str, message: str) -> JSONResponse:
 
 @router.post("/index")
 async def index(request: IndexRequest, background: BackgroundTasks):
+    if request.user_id is None:
+        return _error(
+            400,
+            "missing_user_id",
+            "Desde a Fase 4 todo o pedido de indexação tem de trazer user_id.",
+        )
     try:
-        prepared = await prepare_indexing(request.repo_url)
+        UUID(request.user_id)
+    except ValueError:
+        return _error(400, "invalid_user_id", f"user_id inválido: {request.user_id}")
+
+    try:
+        prepared = await prepare_indexing(
+            request.repo_url, request.user_id, request.force
+        )
     except InvalidRepoUrl as error:
         return _error(400, "invalid_repo_url", str(error))
     except RepoNotFound as error:
@@ -77,6 +93,11 @@ async def index_status(repo_id: str):
     repo = rows[0]
     return {
         "repo_id": repo["id"],
+        # owner/repo vêm daqui e não do 202 porque o repo_id vive no URL: quem
+        # recarrega /repo/{id} tem só o uuid e continua a precisar do nome para
+        # mostrar no ecrã.
+        "owner": repo["owner"],
+        "repo": repo["repo"],
         "stage": repo["index_stage"],
         "files_found": repo["files_found"],
         "chunks_processed": repo["chunks_processed"],

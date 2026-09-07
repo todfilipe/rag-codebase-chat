@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -35,6 +36,13 @@ async def event_stream(question: str, chunks: list[RetrievedChunk]):
                     "similarity": round(chunk.similarity, 3),
                     "start_offset": chunk.start_offset,
                     "end_offset": chunk.end_offset,
+                    "start_line": chunk.start_line,
+                    "end_line": chunk.end_line,
+                    # O mesmo texto que vai no prompt do Gemini vai para o
+                    # painel de fontes: é o que permite ao utilizador ver em que
+                    # código a resposta se apoiou sem sair da página. São ~10 KB
+                    # por pergunta, uma vez, antes do primeiro token.
+                    "content": chunk.content,
                 }
                 for chunk in chunks
             ]
@@ -56,10 +64,29 @@ async def event_stream(question: str, chunks: list[RetrievedChunk]):
 
 @router.post("/query")
 async def query(request: QueryRequest):
+    if request.user_id is None:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "missing_user_id",
+                "message": "Desde a Fase 4 todo o pedido de query tem de trazer user_id.",
+            },
+        )
+    try:
+        UUID(request.user_id)
+    except ValueError:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "invalid_user_id",
+                "message": f"user_id inválido: {request.user_id}",
+            },
+        )
+
     # O retrieval corre antes de a resposta começar, por isso falhas aqui ainda
     # podem ser um 4xx/5xx normal em vez de um evento de erro a meio do stream.
     try:
-        chunks = await retrieve_chunks(request.question, request.repo_id)
+        chunks = await retrieve_chunks(request.question, request.repo_id, request.user_id)
     except (GeminiApiError, RetrievalError) as error:
         return JSONResponse(
             status_code=500,
@@ -71,7 +98,7 @@ async def query(request: QueryRequest):
             status_code=404,
             content={
                 "error": "repo_not_indexed",
-                "message": f"Não há chunks indexados para o repo {request.repo_id}.",
+                "message": f"Não há chunks indexados para o repo {request.repo_id} deste utilizador.",
             },
         )
 
