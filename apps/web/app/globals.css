@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Paleta do Primer (o design system real do GitHub), não uma aproximação —
+   ver docs/interface-prompts/INTERFACE.md. Só existe o tema escuro: o claro
+   fica para depois, com os valores já documentados na mesma tabela. */
+@theme {
+  --color-canvas: #0d1117;
+  --color-surface: #161b22;
+  --color-line: #30363d;
+  --color-fg: #e6edf3;
+  --color-muted: #8b949e;
+  --color-accent: #2f81f7;
+  --color-success: #3fb950;
+  --color-danger: #f85149;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+    monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-fg);
 }
+
+/* Textura do hero: um brilho radial azul quase impercetível mais uma grelha de
+   pontos. É isto que separa "minimalismo" de "página por acabar" — sem nenhum
+   dos dois, o formulário sozinho lê-se como protótipo. Vive em CSS e não em
+   divs porque são duas camadas decorativas, não conteúdo. */
+.hero-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero-backdrop::before,
+.hero-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-backdrop::before {
+  background-image: radial-gradient(
+    circle at 50% 30%,
+    rgb(47 129 247 / 0.13),
+    transparent 55%
+  );
+  filter: blur(40px);
+}
+
+.hero-backdrop::after {
+  background-image: radial-gradient(rgb(48 54 61 / 0.55) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
