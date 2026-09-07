@@ -61,7 +61,7 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 
 **Etapas:**
 - [x] Definir e documentar o contrato de API endpoint-a-endpoint (`POST /index`, `GET /index/{repo_id}/status`, `POST /query` com streaming) — feito em `docs/API-CONTRACT.md` (01-08-2026), com request/response shape e códigos de erro. Revisto em 25-08-2026 contra o código real: acrescentados os erros de `POST /query` (`repo_not_indexed`, `retrieval_failed`) e o `POST /index` passou a `202` + indexação em background.
-- [x] Passar a indexação para background no `rag-service` (`202` imediato + `GET /index/{repo_id}/status`), com o progresso gravado em `repos` (migration `0002_index_progress.sql`). Não estava previsto nesta fase: veio de perceber que, com indexação síncrona, fechar o separador podia deitar fora minutos de embeddings já pagos.
+- [x] Passar a indexação para background no `rag-service` (`202` imediato + `GET /index/{repo_id}/status`), com o progresso gravado nas colunas `index_*` de `repos`. Não estava previsto nesta fase: veio de perceber que, com indexação síncrona, fechar o separador podia deitar fora minutos de embeddings já pagos.
 - [x] Gerar `RAG_SERVICE_INTERNAL_TOKEN`, adicionar a ambos os `.env` (web e rag-service), validar no `rag-service` que todo pedido tem o token correto — dependência em `app/core/auth.py`, aplicada a `/index`, `/query` e `/diagnostics/*`; só `/health` fica aberto.
 - [x] Implementar no `apps/web` os Route Handlers que fazem proxy: `POST /api/index`, `GET /api/index/{repoId}/status` e `POST /api/query` (SSE devolvido com `new Response(upstream.body)`, sem ler o corpo). Lógica partilhada em `lib/rag-service.ts`.
 - [x] Testar falha propositada (rag-service em baixo, token errado, timeout) e confirmar que o `web` devolve um erro claro em vez de um crash silencioso — verificado em 25-08-2026: `502 rag_service_unavailable`, `401 invalid_internal_token` (propagado do rag-service), `504 upstream_timeout` aos 30s. A indexação do `expressjs/express` apanhou também uma falha real (429 de quota do Gemini) e confirmou que ela fica gravada em `repos.index_error` com o número de chunks onde parou.
@@ -79,11 +79,10 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 **Objetivo:** substituir os endpoints de diagnóstico por uma interface de chat utilizável. Ver `docs/interface-prompts/INTERFACE.md` para o desenho detalhado.
 
 **Etapas:**
-- [ ] Ecrã de "conectar repositório": input de URL do GitHub, validação, feedback de progresso da indexação (hoje é um `curl` manual — precisa de virar UI com estado).
-- [ ] Ecrã de chat: histórico de mensagens, input, streaming de tokens em tempo real, citações de ficheiros por mensagem.
-- [ ] Estados: vazio (sem repo conectado), a indexar, pronto, erro de indexação, sem resultados relevantes.
-- [ ] Painel ou secção de fontes citadas, com link/preview do excerto do ficheiro.
-- [ ] Responsividade básica e modo escuro (se fizer sentido para o portfolio).
+- [x] Ecrã de "conectar repositório": input de URL do GitHub, validação, feedback de progresso da indexação — feito em 25-08-2026. Landing em `apps/web/app/page.tsx` e ecrã de progresso em `/repo/[repoId]`, com polling de 2s ao `GET /index/{repo_id}/status`. O `repo_id` vive no URL para a indexação sobreviver a um refresh. Verificado ponta a ponta com `sindresorhus/slugify` (8 ficheiros): 202 → redirect → stepper → `Ready`, mais os caminhos de URL inválido (parado no cliente) e `repo_not_found`.
+- [x] Ecrã de chat: histórico de mensagens, input, streaming de tokens em tempo real, citações de ficheiros por mensagem — feito em 25-08-2026 em `/repo/[repoId]/chat` (rota própria: o ecrã de indexação faz `router.replace` para lá quando o stage chega a `done`, e o chat devolve para trás quem chegue com a indexação a meio). O stream é consumido com `fetch` + `getReader()` e um parser de SSE escrito à mão em `lib/sse.ts`, porque o `EventSource` do browser só faz GET e a pergunta vai no body. Verificado com `sindresorhus/slugify`: o evento `sources` enche o painel antes do primeiro token, a resposta aparece aos pedaços, e os ficheiros citados ficam por mensagem no fim.
+- [x] Estados: vazio (sem repo conectado), a indexar, pronto, erro de indexação, sem resultados relevantes.
+- [x] Painel ou secção de fontes citadas, com link/preview do excerto do ficheiro.
 
 **Está pronto quando:** um utilizador consegue colar um URL do GitHub, ver o progresso da indexação, e conversar com o repositório sem tocar em nenhum endpoint de diagnóstico.
 
@@ -95,18 +94,18 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 
 **Objetivo:** cada utilizador tem conta própria; deixa de haver um único PAT partilhado para todos os repositórios.
 
-**Conceitos a confirmar antes de avançar:** diferença entre o modelo atual (PAT interno único, decisão registada em `decisions.md`) e OAuth por utilizador; scopes do GitHub OAuth; como isto se liga ao RLS do Supabase.
+**Conceitos a confirmar antes de avançar:** diferença entre o modelo atual (PAT interno único, decisão registada em `decisions.md`) e login por utilizador; porque é que aqui o GitHub OAuth é só identidade e não acesso a repositórios; as duas fronteiras de autenticação (browser→web pela sessão, web→rag-service pelo token interno) e porque uma não substitui a outra; como isto se liga ao RLS do Supabase.
 
 **Etapas:**
-- [ ] Integrar Clerk no `apps/web`.
-- [ ] Configurar GitHub OAuth app, pedir scope mínimo necessário para repositórios públicos (e privados, se for suportado nesta fase).
-- [ ] Associar `repos` e `code_chunks` a um `user_id`, migrar o schema.
-- [ ] Atualizar `match_chunks` e as policies RLS para filtrar também por utilizador, não só por `repo_id`.
-- [ ] Decidir e documentar o que acontece a repositórios já indexados sob o modelo antigo (PAT partilhado).
+- [x] Integrar Supabase Auth no `apps/web` (`@supabase/ssr`, sessão em cookies, middleware a proteger tudo menos a landing).
+- [x] Configurar os métodos de login: email/password e GitHub OAuth app com scope mínimo, sem `repo` (o login é portão de acesso, não dá acesso aos repositórios do utilizador).
+- [x] Associar `repos` e `code_chunks` a um `user_id`, migrar o schema.
+- [x] Atualizar `match_chunks` e as policies RLS para filtrar também por utilizador, não só por `repo_id`.
+- [x] Decidir e documentar o que acontece a repositórios já indexados sob o modelo antigo (PAT partilhado).
 
 **Está pronto quando:** um utilizador só vê e consulta os repositórios que ele próprio conectou, com login via GitHub.
 
-**Modelo sugerido:** fable 5 para o desenho das policies de RLS e do modelo de isolamento por utilizador — é exatamente o tipo de decisão de segurança onde um erro é caro e difícil de detetar depois. Opus 5 para a integração do Clerk em si. Sonnet 5 para UI de login/perfil.
+**Modelo sugerido:** fable 5 para o desenho das policies de RLS e do modelo de isolamento por utilizador — é exatamente o tipo de decisão de segurança onde um erro é caro e difícil de detetar depois. Opus 5 para a integração do Supabase Auth em si (o middleware e o refresh de sessão em cookies é fácil de fazer mal). Sonnet 5 para UI de login/perfil.
 
 ---
 
@@ -115,11 +114,12 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 **Objetivo:** utilizador consegue ver os repositórios que já indexou, geri-los, e (se for esse o plano de produto) pagar por uso acima de um limite gratuito.
 
 **Etapas:**
-- [ ] Dashboard: lista de repositórios indexados, data da última indexação, botão de reindexar/remover.
-- [ ] Definir métrica de billing (nº de repositórios? nº de perguntas? tokens consumidos?) — esta é uma decisão de produto que falta tomar, registar em `decisions.md` quando for tomada.
-- [ ] Integrar Stripe: planos, checkout, portal do cliente.
-- [ ] Webhooks do Stripe para atualizar o estado da subscrição.
-- [ ] Aplicar limites (ex: bloquear indexação de novos repos se o plano gratuito esgotou).
+- [x] Dashboard: lista de repositórios indexados, data da última indexação, botão de reindexar/remover.
+- [x] Definir métrica de billing (nº de repositórios? nº de perguntas? tokens consumidos?) — esta é uma decisão de produto que falta tomar, registar em `decisions.md` quando for tomada.
+- [x] Reindexação incremental (hash de conteúdo por ficheiro) a substituir o clean slate no indexer.py.
+- [x] Integrar Stripe: planos, checkout, portal do cliente.
+- [x] Webhooks do Stripe para atualizar o estado da subscrição.
+- [x] Aplicar limites (ex: bloquear indexação de novos repos se o plano gratuito esgotou).
 
 **Está pronto quando:** existe pelo menos um plano pago funcional de ponta a ponta (checkout → acesso desbloqueado → webhook de cancelamento a revogar acesso).
 
@@ -131,10 +131,16 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 
 **Objetivo:** o projeto está deployado, testado, e o Filipe consegue defendê-lo numa entrevista técnica.
 
+**Conceitos a confirmar antes de avançar:** porque é que o plano original (Vercel + Railway) foi trocado por uma VPS única (decisão de 30-08-2026, ver `decisions.md`): a indexação em background do `rag-service` obriga a um processo sempre a correr, logo a VPS é precisa de qualquer forma, e co-localizar os dois serviços permite que o `rag-service` escute só em `127.0.0.1` em vez de ficar exposto à internet com o token interno como única defesa. O que se perde em troca: preview deploys, rollback num clique, CDN e escala automática.
+
 **Etapas:**
-- [ ] Deploy do `apps/rag-service` no Railway (Dockerfile), `apps/web` no Vercel, ambos a apontar para o mesmo Supabase de produção.
+- [x] Preparar o `apps/web` para correr fora do Vercel: `output: "standalone"` no `next.config`, build de produção validada localmente.
+- [ ] `Dockerfile` para cada serviço e um `docker-compose.yml` que levante os dois na VPS, ambos a apontar para o mesmo Supabase de produção.
+- [ ] Publicar só o `web` através do nginx (reverse proxy + TLS com certbot). O `rag-service` fica na rede interna do compose, sem porta publicada, e o `RAG_SERVICE_URL` passa a ser um endereço interno.
+- [ ] Confirmar que o nginx não faz buffering do SSE de `POST /api/query` (`proxy_buffering off`), senão a resposta chega toda de uma vez em vez de token a token.
+- [ ] Definir e documentar o processo de deploy (build na VPS a partir do git, ou imagens construídas em CI e puxadas por SSH) e o arranque automático depois de um reboot.
 - [ ] Testes automatizados mínimos: pelo menos os módulos críticos do `rag-service` (chunking, isolamento por `repo_id`/`user_id`) e os Route Handlers de proxy no `web`.
-- [ ] Revisão de segurança: `service_role_key` nunca chega ao cliente, RLS ativo e testado, token interno não exposto, rate limiting básico nos endpoints públicos.
+- [ ] Revisão de segurança: `service_role_key` nunca chega ao cliente, RLS ativo e testado, token interno não exposto, `rag-service` sem resposta a partir do exterior da VPS (testar de fora, não assumir), rate limiting básico nos endpoints públicos.
 - [ ] Rever `decisions.md` e `LOGICA-DO-PROJETO.md`, garantir que refletem o estado real do código (não o que foi planeado e mudou).
 - [ ] Preparar respostas às "Perguntas de Entrevista" do `CLAUDE.md`, agora incluindo perguntas novas sobre a arquitetura poliglota: "porque separaste o RAG em Python?", "como comunicam os dois serviços?", "o que acontece se o rag-service cair?".
 - [ ] Polish visual final, README atualizado com screenshots/GIF de demo.

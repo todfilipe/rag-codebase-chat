@@ -218,7 +218,7 @@ O protótipo TypeScript já construído (indexação, retrieval, geração funci
 
 Documentos de apoio à implementação, já prontos a usar (não é preciso decidir estas coisas de novo):
 
-- `supabase/migrations/0001_initial_schema.sql` — schema SQL real (tabelas, índices, função `match_chunks`, RLS mínimo).
+- `supabase/migrations/0001_initial_schema.sql` — schema SQL real, ficheiro único (tabelas, índices, função `match_chunks`, RLS por dono).
 - `docs/API-CONTRACT.md` — shapes de request/response entre `web` e `rag-service`, incluindo o protocolo SSE de `/query`.
 - `docs/ENV.md` — todas as variáveis de ambiente dos dois serviços, por fase em que são introduzidas.
 - `docs/interface-prompts/INTERFACE.md` — inclui as decisões de produto do MVP para a interface (histórico não persiste, um repo ativo de cada vez, sugestões estáticas, modo escuro fica para o polish).

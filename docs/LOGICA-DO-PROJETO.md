@@ -59,7 +59,7 @@ O trade-off aceite: mais complexidade operacional (dois serviços para correr, d
 ### Onde fica a fronteira
 
 - **`apps/rag-service` (Python/FastAPI):** tudo o que é pipeline RAG — indexação, chunking, embeddings, retrieval, geração, streaming. Nunca é exposto publicamente; só o `apps/web` lhe fala, autenticado por um token interno partilhado (`RAG_SERVICE_INTERNAL_TOKEN`).
-- **`apps/web` (Next.js/TypeScript):** autenticação de utilizador (Clerk), OAuth do GitHub, billing (Stripe), dashboard, e o proxy entre o browser e o `rag-service` (incluindo o proxy do streaming SSE).
+- **`apps/web` (Next.js/TypeScript):** autenticação de utilizador (Supabase Auth), login por GitHub, billing (Stripe), dashboard, e o proxy entre o browser e o `rag-service` (incluindo o proxy do streaming SSE).
 
 A regra prática para decidir onde uma peça de lógica nova deve viver: **se manipula texto de código, embeddings, vetores ou chama o LLM para gerar/recuperar, vai para o `rag-service`. Se é sobre identidade, pagamento ou apresentação, vai para o `web`.**
 
@@ -89,11 +89,13 @@ Modelo `gemini-embedding-2` do Google, vetores de 768 dimensões, com verificaç
 
 ### 4. Indexação
 
-Orquestra os passos acima: para cada repositório, faz upsert na tabela `repos`, apaga todos os chunks antigos desse repo (**clean-slate**, sem diff incremental) e volta a indexar do zero, com um pool de concorrência de 5 chamadas paralelas (ao GitHub e ao Gemini) para não rebentar rate limits nem ser lento demais a correr tudo em sequência.
+Orquestra os passos acima: para cada repositório, faz upsert na tabela `repos`, compara a árvore do GitHub com o que já está indexado e trata só das diferenças, com um pool de concorrência de 5 chamadas paralelas (ao GitHub e ao Gemini) para não rebentar rate limits nem ser lento demais a correr tudo em sequência.
 
-**Porquê clean-slate:** muito mais simples de implementar e garante que o estado da base de dados fica sempre consistente. O custo é reindexar tudo mesmo que só um ficheiro tenha mudado — aceitável nesta fase, fica em aberto para versão futura (diff incremental).
+**Porquê incremental (desde 29-08-2026):** a listagem da árvore do GitHub já traz o **blob SHA** de cada ficheiro, que é o hash de conteúdo do próprio git. Comparar esse SHA com o que está guardado na tabela `indexed_files` diz o que mudou sem descarregar um único ficheiro. Um ficheiro com SHA igual não é lido nem reembedado; um com SHA diferente tem os chunks apagados e é refeito; um que desapareceu da árvore tem os chunks apagados. Até esta data a indexação era clean-slate (apagar tudo e refazer do zero), o que era mais simples mas pagava o repositório inteiro por cada reindexação. Isso deixou de ser sustentável quando os planos passaram a prometer reindexação ilimitada, ver `decisions.md`.
 
-**O que acontece se falhar a meio:** simplesmente propaga o erro e deixa o estado parcial. Não há rollback automático nem retry — se falhar, o utilizador tenta de novo, e o próximo clean-slate limpa o que ficou incompleto. Isto é uma decisão consciente de simplicidade, não uma omissão.
+**Porquê uma tabela `indexed_files` e não uma coluna em `code_chunks`:** o registo do SHA é escrito depois de os chunks do ficheiro estarem inseridos. Assim, uma indexação que rebente a meio deixa o ficheiro sem registo e a tentativa seguinte refá-lo. Se o SHA vivesse nas próprias linhas de chunk, um insert parcial marcava o ficheiro como indexado estando incompleto, e nada voltaria a tocar-lhe.
+
+**O que acontece se falhar a meio:** simplesmente propaga o erro e deixa o estado parcial. Não há rollback automático nem retry — se falhar, o utilizador tenta de novo, e os ficheiros que ficaram sem registo em `indexed_files` são refeitos. Isto é uma decisão consciente de simplicidade, não uma omissão.
 
 ### 5. Retrieval (vector search)
 
@@ -113,13 +115,16 @@ O LLM (`gemini-3.1-flash-lite-preview` — escolhido pelo trade-off custo/latên
 
 ## Modelo de dados (Supabase / Postgres)
 
-- **`repos`** — `id` (UUID, PK), `owner`, `repo`, `url`, unicidade em `(owner, repo)`. Depois da Fase 4, ganha `user_id`.
-- **`code_chunks`** — `repo_id` (FK para `repos.id`, `ON DELETE CASCADE`), `file_path`, `content`, `start_offset`, `end_offset`, `chunk_index`, `embedding` (`vector(768)`).
-- **`match_chunks(query_embedding, match_repo_id, match_count)`** — função SQL, devolve os chunks mais similares de um repo, ordenados por cosine similarity.
+- **`repos`** — `id` (UUID, PK), `user_id` (FK para `auth.users`, `ON DELETE CASCADE`), `owner`, `repo`, `url`, colunas de progresso da indexação (`index_stage`, `files_found`, `chunks_processed`, `chunks_total`, `index_error`), unicidade em `(owner, repo, user_id)`.
+- **`code_chunks`** — `repo_id` (FK para `repos.id`, `ON DELETE CASCADE`), `user_id` (FK para `auth.users`, `ON DELETE CASCADE`), `file_path`, `content`, `start_offset`, `end_offset`, `start_line`/`end_line` (nullable), `chunk_index`, `embedding` (`vector(768)`).
+- **`match_chunks(query_embedding, match_repo_id, match_user_id, match_count)`** — função SQL, devolve os chunks mais similares de um repo, ordenados por cosine similarity. O filtro por `match_user_id` é o que garante o isolamento entre utilizadores: o RLS não protege este caminho, porque o `rag-service` fala com o Supabase pela `service_role_key`.
 
 **Porquê `ON DELETE CASCADE`:** apagar um repositório é uma operação, não milhares — apaga-se a linha em `repos` e o Postgres trata de limpar todos os chunks associados automaticamente.
 
-**Porquê `start_offset`/`end_offset` em vez de números de linha:** offsets de caracteres são exatos e fáceis de manipular em strings; permitem no futuro mapear a resposta de volta ao documento original com precisão (ex: para highlight de código na UI — ver `interface-prompts/INTERFACE.md`).
+**Porquê `start_offset`/`end_offset`:** offsets de caracteres são exatos e fáceis de manipular em strings, e são a unidade em que o chunker trabalha (corta a cada 2000 caracteres, não em fronteiras de linha).
+
+**Porquê `start_line`/`end_line` também (25-08-2026):** a decisão original era guardar só offsets, na expectativa de que chegassem para mapear a resposta de volta ao ficheiro. Não chegam para o caso concreto que a Fase 3 trouxe — linkar para o excerto no GitHub, que só entende `#L120-L160`. Converter caracteres em linhas obriga a contar os `
+` de todo o texto anterior ao chunk, e esse texto só existe dentro do `chunk_text()`, no momento da indexação; depois de o ficheiro ser cortado, cada chunk conhece apenas os seus 2000 caracteres. As duas unidades coexistem: offsets continuam a ser a verdade sobre o corte, as linhas são a tradução para o vocabulário do GitHub, calculada de graça enquanto o ficheiro inteiro ainda está em memória.
 
 **Segurança de escrita:** RLS está ativado em todas as tabelas desde o início (mesmo antes de existirem policies), como defesa em profundidade. As escritas (feitas durante a indexação) usam a `service_role_key` do Supabase a partir do servidor, que faz bypass ao RLS por design — é seguro porque só corre em ambiente de servidor controlado, nunca no cliente.
 
@@ -131,17 +136,20 @@ O LLM (`gemini-3.1-flash-lite-preview` — escolhido pelo trade-off custo/latên
 |---|---|
 | GitHub client, chunker, embeddings, indexer, retriever, generator | ✅ Implementados e validados em TypeScript (protótipo) |
 | Estrutura de monorepo (`apps/web`, `apps/rag-service`) | Criada e verificada em 02-08-2026 (`apps/web` responde 200; `apps/rag-service` responde `GET /health`) |
-| Migrations SQL versionadas (`supabase/migrations`) | ✅ Escritas em `supabase/migrations/0001_initial_schema.sql` (01-08-2026) e corridas contra o Supabase real (25-08-2026) |
+| Migrations SQL versionadas (`supabase/migrations`) | ✅ `supabase/migrations/0001_initial_schema.sql` (01-08-2026), corrido contra o Supabase real (25-08-2026). Colapsado num único ficheiro no fim da Fase 4 (27-08-2026, ver `decisions.md`) |
 | Contrato de API `web` ↔ `rag-service` | ✅ Definido em `docs/API-CONTRACT.md` (01-08-2026), revisto contra o código real em 25-08-2026 (`POST /index` passou a `202` + background; erros de `POST /query` documentados) |
 | Referência de variáveis de ambiente | ✅ `docs/ENV.md` (01-08-2026) |
 | Porte do pipeline para Python/FastAPI | `github_client.py`, `chunker.py`, `embeddings.py` (18-08-2026) `indexer.py`, `retriever.py` e `generator.py` (25-08-2026) portados e testados; ✅ Concluído (25-08-2026) — pipeline completo em Python, `POST /index` e `POST /query` (SSE) a responder, e retrieval validado como idêntico ao do protótipo TS |
 | Streaming SSE de geração | ✅ `POST /query` no rag-service (25-08-2026), com eventos `sources`/`token`/`done`/`error` |
 | Contrato `web` ↔ `rag-service` + token interno | ✅ Implementado (25-08-2026): token validado em `app/core/auth.py`, proxy em `apps/web/lib/rag-service.ts` + `app/api/{index,query}` |
-| Indexação em background + progresso | ✅ `POST /index` responde `202` e corre em background; progresso em `repos` (migration `0002`), lido por `GET /index/{repo_id}/status` |
-| Interface de chat | ❌ Só existem endpoints de diagnóstico (`curl`) |
-| Autenticação / GitHub OAuth (Clerk) | ❌ Não iniciada — hoje há um único PAT interno partilhado |
-| RLS por utilizador | ❌ RLS ativo mas sem policies de isolamento por utilizador (só por `repo_id`) |
-| Billing (Stripe) | ❌ Não iniciado |
+| Indexação em background + progresso | ✅ `POST /index` responde `202` e corre em background; progresso nas colunas `index_*` de `repos`, lido por `GET /index/{repo_id}/status` |
+| Interface de chat | ✅ Concluída (25-08-2026): conectar repositório, progresso de indexação, chat com streaming e painel de fontes com preview do excerto + link para o GitHub. Responsividade e modo claro foram retirados da Fase 3; light mode fica para o polish da Fase 6 |
+| Autenticação / login por GitHub (Supabase Auth) | ✅ Concluída (27-08-2026): fornecedor decidido (Supabase Auth, não Clerk, ver `decisions.md`) e canalização feita (`lib/supabase/{env,client,server}.ts` + `proxy.ts` a renovar a sessão e a proteger tudo menos a landing). Login funcional desde 26-08-2026 (etapa 2): `/login` com email/password e GitHub OAuth, callback PKCE em `app/auth/callback`, logout em `app/auth/signout`. `user_id` obrigatório em `repos` e `code_chunks` e policies de RLS por dono desde 27-08-2026 (etapas 3 e 4). O GitHub continua a ser lido pelo PAT interno do `rag-service` |
+| RLS por utilizador | ✅ Policies por dono em `repos` e `code_chunks` e `match_chunks` filtrado por `match_user_id` (27-08-2026). `repos_delete_own` acrescentada na migration `0002` para o dashboard poder remover |
+| Dashboard de repositórios | ✅ Concluído (27-08-2026): `/dashboard` lista os repos do utilizador lidos do Supabase via RLS, com data da última indexação, reindexar e remover (Server Action + `repos_delete_own`) |
+| Reindexação incremental | ✅ Concluída (29-08-2026): `indexed_files` + diff por blob SHA no `indexer.py`, `force` opcional no `POST /index`. Migration `0003` corrida e os quatro ramos do diff verificados contra o Supabase real (repo legado, sem alterações, ficheiro alterado, ficheiro apagado) |
+| Planos e preços | ✅ Decididos em 29-08-2026 (Free / Pro 9€ / Ultra 28€, ver `decisions.md`). Nada implementado ainda |
+| Billing (Stripe) | ⏳ Planos, checkout e portal concluídos (29-08-2026): migration `0004` com `plans` e `subscriptions`, Products e Prices no sandbox, `/pricing` a ler os planos do Supabase, checkout e portal verificados ponta a ponta com um pagamento real de teste. Falta o webhook, sem o qual quem paga continua no plano free |
 | Testes automatizados | ❌ Nenhum runner configurado |
 
 Este documento e a tabela acima devem ser atualizados a cada fase concluída do `ROADMAP.md` — se ficarem desatualizados, deixam de servir o propósito de "fotografia real do sistema" e passam a ser mais uma fonte de confusão do que de clareza.

@@ -1,0 +1,21 @@
+services:
+  rag-service:
+    build: ./apps/rag-service
+    env_file: ./apps/rag-service/.env
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    env_file: ./apps/web/.env.local
+    environment:
+      RAG_SERVICE_URL: http://rag-service:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - rag-service
+    restart: unless-stopped
