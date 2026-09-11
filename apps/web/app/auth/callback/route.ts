@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { siteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // Aqui é onde o GitHub OAuth acaba. O Supabase não nos devolve a sessão, devolve
@@ -6,7 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 // ou seja, um Route Handler. Um Server Component não servia: quando ele corre, o
 // HTML já começou a sair e os cookies já não podem ser postos.
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
 
   // `next` vem do URL, logo é input do utilizador. Sem esta guarda, um
@@ -21,15 +22,15 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     // Sem code é porque o utilizador carregou em Cancel no ecrã do GitHub.
-    return NextResponse.redirect(`${origin}/login`);
+    return NextResponse.redirect(`${siteUrl}/login`);
   }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
+    return NextResponse.redirect(`${siteUrl}/login?error=oauth_failed`);
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(`${siteUrl}${next}`);
 }
