@@ -88,7 +88,7 @@ export function ConnectForm() {
         <button
           type="submit"
           disabled={state.status === "submitting"}
-          className="flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="flex h-10 shrink-0 items-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {state.status === "submitting" ? "Analyzing…" : "Analyze repository"}
           <ArrowRight className="size-4" />

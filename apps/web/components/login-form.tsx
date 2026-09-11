@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -100,7 +101,14 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   return (
-    <div className="w-full max-w-[400px] rounded-xl border border-line bg-surface p-8 shadow-[0_0_40px_-12px_rgb(47_129_247/0.35)]">
+    <div className="w-full max-w-[400px] rounded-xl border border-line bg-surface p-8 shadow-[0_0_40px_-12px_rgb(248_167_29/0.25)]">
+      <Image
+        src="/logo.png"
+        alt=""
+        width={44}
+        height={44}
+        className="mx-auto mb-4"
+      />
       <h1 className="text-center text-xl font-semibold tracking-tight">
         {mode === "signin" ? "Sign in" : "Create an account"}
       </h1>

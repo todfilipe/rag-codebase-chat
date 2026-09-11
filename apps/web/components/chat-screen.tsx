@@ -230,7 +230,7 @@ export function ChatScreen({ repoId }: { repoId: string }) {
                 type="submit"
                 disabled={isStreaming || question.trim() === ""}
                 aria-label="Send question"
-                className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 <ArrowRight className="size-4" />
               </button>

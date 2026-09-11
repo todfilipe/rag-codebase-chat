@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { GithubMark } from "./icons";
@@ -19,12 +20,7 @@ export async function TopBar() {
     <header className="h-14 shrink-0 border-b border-line">
       <div className="mx-auto flex h-full max-w-[1200px] items-center px-6">
         <Link href="/" className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="flex size-7 items-center justify-center rounded-md bg-accent font-mono text-[13px] font-bold text-white"
-          >
-            {"{}"}
-          </span>
+          <Image src="/logo.png" alt="" width={28} height={28} priority />
           <span className="text-[15px] font-semibold tracking-tight">
             RAG Codebase Chat
           </span>

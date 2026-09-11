@@ -79,7 +79,7 @@ export default async function PricingPage() {
                         type="submit"
                         className={`w-full rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                           isHero
-                            ? "bg-accent text-white hover:opacity-90"
+                            ? "bg-accent text-canvas hover:opacity-90"
                             : "border border-line bg-surface hover:border-muted"
                         }`}
                       >

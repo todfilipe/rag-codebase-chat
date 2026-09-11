@@ -9,7 +9,7 @@
   --color-line: #30363d;
   --color-fg: #e6edf3;
   --color-muted: #8b949e;
-  --color-accent: #2f81f7;
+  --color-accent: #f8a71d;
   --color-success: #3fb950;
   --color-danger: #f85149;
 
@@ -28,7 +28,7 @@ body {
   color: var(--color-fg);
 }
 
-/* Textura do hero: um brilho radial azul quase impercetível mais uma grelha de
+/* Textura do hero: um brilho radial amarelo quase impercetível mais uma grelha de
    pontos. É isto que separa "minimalismo" de "página por acabar" — sem nenhum
    dos dois, o formulário sozinho lê-se como protótipo. Vive em CSS e não em
    divs porque são duas camadas decorativas, não conteúdo. */
@@ -49,7 +49,7 @@ body {
 .hero-backdrop::before {
   background-image: radial-gradient(
     circle at 50% 30%,
-    rgb(47 129 247 / 0.13),
+    rgb(248 167 29 / 0.1),
     transparent 55%
   );
   filter: blur(40px);

@@ -42,7 +42,7 @@ export default async function DashboardPage() {
             ) : (
               <Link
                 href="/pricing"
-                className="rounded-md bg-accent px-3.5 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                className="rounded-md bg-accent px-3.5 py-1.5 text-sm font-medium text-canvas transition-opacity hover:opacity-90"
               >
                 See plans
               </Link>
