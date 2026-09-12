@@ -9,3 +9,10 @@ dependencies = [
     "httpx>=0.28.0",
     "pydantic-settings>=2.10.0",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -67,6 +67,7 @@ O total de chunks só é conhecido depois de os ficheiros serem lidos, por isso 
 | `500` | Falha inesperada a meio da indexação | `{"error": "indexing_failed", "message": "..."}` — consistente com a decisão já tomada em `decisions.md`: sem rollback automático, o estado fica parcial, e a tentativa seguinte refaz os ficheiros que ficaram sem registo em `indexed_files`. |
 
 | `402` | O utilizador já usou todas as vagas de repositório do plano (só o `apps/web` devolve este) | `{"error": "repo_limit_reached", "message": "..."}` |
+| `429` | Mais de 5 pedidos de indexação num minuto do mesmo utilizador (só o `apps/web` devolve este, com header `Retry-After`) | `{"error": "rate_limited", "message": "...", "retry_after_seconds": 42}` |
 
 Todos os erros da tabela acima acontecem **antes** do `202` — são as falhas causadas pelo input do utilizador, e ele ainda está à espera da resposta para as receber. Depois do `202`, qualquer falha passa a ser reportada em `GET /index/{repo_id}/status` com `stage: "failed"`, porque já não há resposta HTTP aberta para onde a mandar. As duas quotas de chunks caem aqui por construção: só se sabe quantos chunks tem um repositório depois de o chunking correr, o que já é depois do `202`.
 
@@ -78,6 +79,8 @@ Todos os erros da tabela acima acontecem **antes** do `202` — são as falhas c
 ## `GET /index/{repo_id}/status`
 
 Progresso de uma indexação em curso — usado pela UI para os passos nomeados descritos em `INTERFACE.md`. O estado vive nas colunas `index_*` de `repos`, não em memória do processo: um deploy a meio de uma indexação não pode deixar o utilizador sem forma de saber em que pé está.
+
+**Request:** `GET /index/{repo_id}/status?user_id=uuid`. O `user_id` é **obrigatório** desde a revisão de segurança de 12-09-2026 (antes qualquer utilizador autenticado lia o estado de um repo alheio conhecendo o uuid). Tal como no `POST /query`, vem sempre da sessão no `apps/web`, e o repo de outro utilizador devolve o mesmo `404 repo_not_found` de um id que não existe. O `apps/web` passa o `repo_id` por `encodeURIComponent` antes de o pôr no path.
 
 **Response (`200 OK`)**
 
@@ -102,7 +105,8 @@ Quando `stage` é `"failed"`, `error` contém o mesmo shape `{"error", "message"
 
 | Status | Quando | Body |
 |---|---|---|
-| `404` | Não existe repo com esse `repo_id` | `{"error": "repo_not_found", "message": "..."}` |
+| `400` | `user_id` em falta ou não é um uuid | `{"error": "missing_user_id" \| "invalid_user_id", "message": "..."}` |
+| `404` | Não existe repo com esse `repo_id` **deste utilizador** (ou o `repo_id` não é um uuid) | `{"error": "repo_not_found", "message": "..."}` |
 
 **Limitação conhecida:** se o processo do `rag-service` morrer a meio de uma indexação (deploy, crash), o trabalho não é retomado por ninguém e o `stage` fica congelado no último valor gravado. Não há fila de jobs com retry — está fora do âmbito deste projeto. A recuperação é o utilizador reindexar, e o incremental refaz só os ficheiros que ficaram sem registo.
 
@@ -163,6 +167,7 @@ O retrieval corre antes de o stream abrir, por isso falhas nesta fase ainda são
 | `404` | Não há chunks indexados para o `repo_id` **deste utilizador** (nunca foi indexado, o id não existe, ou pertence a outro utilizador) | `{"error": "repo_not_indexed", "message": "..."}` |
 | `500` | Falha ao gerar o embedding da pergunta (Gemini) ou ao correr `match_chunks` (Supabase) | `{"error": "retrieval_failed", "message": "..."}` |
 | `402` | O utilizador já usou todas as mensagens do mês (só o `apps/web` devolve este) | `{"error": "message_limit_reached", "message": "..."}` |
+| `429` | Mais de 10 perguntas num minuto do mesmo utilizador (só o `apps/web` devolve este, com header `Retry-After`, e antes de contar a mensagem na quota) | `{"error": "rate_limited", "message": "...", "retry_after_seconds": 42}` |
 
 **Response — erro a meio do stream** (ex: a API do Gemini falha depois de já ter começado a gerar)
 
@@ -189,6 +194,6 @@ Sem autenticação (é o único endpoint que não exige o token interno, para he
 
 - Timeout exato de `POST /query` até ao primeiro byte do stream.
 - Se `POST /index` deve aceitar reindexação forçada de um repo já indexado recentemente, ou se há um cooldown mínimo.
-- Rate limiting dos próprios endpoints do `rag-service` (hoje o rate limit é só o das APIs externas, GitHub/Gemini) — decidir se faz sentido antes da Fase 6.
+- ~~Rate limiting dos próprios endpoints do `rag-service`~~ fechado em 12-09-2026: o limite vive no `apps/web`, por utilizador, em `/api/query` e `/api/index`. O `rag-service` não tem limite próprio porque não é alcançável de fora da VPS (confirmado a partir do exterior).
 
 Regista a decisão em `decisions.md` quando qualquer um destes pontos for fechado.

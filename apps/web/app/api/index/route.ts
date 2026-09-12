@@ -5,6 +5,11 @@ import {
   callRagService,
   serviceErrorResponse,
 } from "@/lib/rag-service";
+import {
+  INDEX_RATE_LIMIT,
+  rateLimitedResponse,
+  takeRateLimit,
+} from "@/lib/rate-limit";
 import { requireUser } from "@/lib/supabase/require-user";
 import { hasRepo } from "@/lib/usage";
 
@@ -12,6 +17,11 @@ export async function POST(request: Request) {
   const user = await requireUser();
   if (user instanceof Response) {
     return user;
+  }
+
+  const retryAfterSeconds = takeRateLimit(`index:${user.id}`, INDEX_RATE_LIMIT);
+  if (retryAfterSeconds !== null) {
+    return rateLimitedResponse(retryAfterSeconds);
   }
 
   let repoUrl: unknown;

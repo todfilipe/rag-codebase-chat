@@ -77,10 +77,30 @@ async def index(request: IndexRequest, background: BackgroundTasks):
 
 
 @router.get("/index/{repo_id}/status")
-async def index_status(repo_id: str):
+async def index_status(repo_id: str, user_id: str | None = None):
+    if user_id is None:
+        return _error(
+            400,
+            "missing_user_id",
+            "O estado de uma indexação só se lê com o user_id do dono.",
+        )
+    try:
+        UUID(user_id)
+    except ValueError:
+        return _error(400, "invalid_user_id", f"user_id inválido: {user_id}")
+    try:
+        UUID(repo_id)
+    except ValueError:
+        return _error(404, "repo_not_found", f"Não existe repo com id {repo_id}.")
+
     async with create_supabase_client() as supabase:
         response = await supabase.get(
-            "/repos", params={"id": f"eq.{repo_id}", "select": STATUS_FIELDS}
+            "/repos",
+            params={
+                "id": f"eq.{repo_id}",
+                "user_id": f"eq.{user_id}",
+                "select": STATUS_FIELDS,
+            },
         )
 
     if not response.is_success:
