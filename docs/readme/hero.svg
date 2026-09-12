@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="560" viewBox="0 0 880 560" role="img" aria-labelledby="title desc">
+  <title id="title">RAG Codebase Chat</title>
+  <desc id="desc">No LangChain, every layer built from scratch. Ask questions about any GitHub repository. Instant semantic search and code reasoning for your entire codebase. Answers grounded in the actual files, with citations you can check.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+      .blink { transform-box: fill-box; transform-origin: center; animation: blink 7s ease-in-out infinite; }
+      .braces { animation: breathe 3.5s ease-in-out infinite; }
+      .cover { animation: type 9s infinite; }
+      .caret { animation: caret 1s steps(1) infinite; }
+      .typed { animation: typed 9s infinite; }
+      .button { animation: press 9s infinite; }
+      @keyframes blink {
+        0%, 90%, 100% { transform: scaleY(1); }
+        93% { transform: scaleY(0.08); }
+        96% { transform: scaleY(1); }
+      }
+      @keyframes breathe {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+      @keyframes type {
+        0%, 10% { transform: translateX(0); animation-timing-function: steps(29, end); }
+        52%, 100% { transform: translateX(244px); }
+      }
+      @keyframes caret {
+        0% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+      @keyframes typed {
+        0%, 86% { opacity: 1; }
+        94%, 100% { opacity: 0; }
+      }
+      @keyframes press {
+        0%, 58%, 66%, 100% { opacity: 1; }
+        62% { opacity: 0.8; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .blink, .braces, .caret, .typed, .button { animation: none; }
+        .cover { animation: none; transform: translateX(244px); }
+        .caret { opacity: 0; }
+      }
+    </style>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#f8a71d" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#f8a71d" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soften" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <pattern id="dots" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="16" r="1" fill="#30363d"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.9"/>
+      <stop offset="0.85" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="fadeMask">
+      <rect width="880" height="560" fill="url(#fade)"/>
+    </mask>
+    <clipPath id="frame">
+      <rect width="880" height="560" rx="8"/>
+    </clipPath>
+    <clipPath id="field">
+      <rect x="204" y="386" width="326" height="40"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="880" height="560" fill="#0d1117"/>
+    <ellipse cx="440" cy="200" rx="360" ry="210" fill="url(#glow)" filter="url(#soften)"/>
+    <rect width="880" height="560" fill="url(#dots)" mask="url(#fadeMask)"/>
+  </g>
+  <rect x="0.5" y="0.5" width="879" height="559" rx="7.5" fill="none" stroke="#30363d"/>
+
+  <g transform="translate(408 30) scale(0.64)">
+    <g class="blink" fill="none" stroke="#f8a71d" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 50C34 17 66 17 92 50C66 83 34 83 8 50Z" stroke-width="4.6"/>
+      <g class="braces" stroke-width="5">
+        <path d="M45.5 35.5C41 35.5 39 37.5 39 42V46C39 48.5 37 50 33 50C37 50 39 51.5 39 54V58C39 62.5 41 64.5 45.5 64.5"/>
+        <path d="M54.5 35.5C59 35.5 61 37.5 61 42V46C61 48.5 63 50 67 50C63 50 61 51.5 61 54V58C61 62.5 59 64.5 54.5 64.5"/>
+      </g>
+    </g>
+  </g>
+
+  <rect x="296.5" y="118.5" width="287" height="29" rx="6" fill="#161b22" stroke="#30363d"/>
+  <circle cx="313" cy="133" r="3" fill="#f8a71d"/>
+  <text x="325" y="137.5" class="sans" font-size="12" fill="#8b949e">No LangChain, every layer built from scratch</text>
+
+  <text x="440" y="222" class="sans" font-size="50" font-weight="700" letter-spacing="-1.5" text-anchor="middle" fill="#e6edf3">Ask questions about</text>
+  <text x="440" y="280" class="sans" font-size="50" font-weight="700" letter-spacing="-1.5" text-anchor="middle" fill="#e6edf3">any GitHub repository</text>
+
+  <text x="440" y="322" class="sans" font-size="15" text-anchor="middle" fill="#8b949e">Instant semantic search and code reasoning for your entire codebase.</text>
+  <text x="440" y="346" class="sans" font-size="15" text-anchor="middle" fill="#8b949e">Answers grounded in the actual files, with citations you can check.</text>
+
+  <rect x="160.5" y="378.5" width="559" height="55" rx="8" fill="#161b22" stroke="#30363d"/>
+  <g transform="translate(174 397) scale(0.75)" fill="none" stroke="#8b949e" stroke-width="1.8" stroke-linecap="round">
+    <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.4"/>
+    <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.6"/>
+  </g>
+  <g clip-path="url(#field)">
+    <text x="208" y="411" class="mono typed" font-size="14" fill="#e6edf3" textLength="244" lengthAdjust="spacing">https://github.com/owner/repo</text>
+    <g class="cover">
+      <rect x="208" y="388" width="330" height="36" fill="#161b22"/>
+      <rect class="caret" x="208" y="397" width="1.5" height="18" fill="#e6edf3"/>
+    </g>
+  </g>
+  <g class="button">
+    <rect x="536" y="385" width="178" height="42" rx="6" fill="#f8a71d"/>
+    <text x="551" y="411" class="sans" font-size="14" font-weight="600" fill="#0d1117">Analyze repository</text>
+    <g transform="translate(686 398) scale(0.67)" fill="none" stroke="#0d1117" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    </g>
+  </g>
+
+  <text x="440" y="462" class="sans" font-size="12" text-anchor="middle" fill="#8b949e">Try it with <tspan class="mono" fill="#f8a71d">facebook/react</tspan></text>
+
+  <text x="440" y="522" class="mono" font-size="12" text-anchor="middle" fill="#8b949e">Next.js 16 · FastAPI · Supabase pgvector · Gemini · Stripe</text>
+</svg>

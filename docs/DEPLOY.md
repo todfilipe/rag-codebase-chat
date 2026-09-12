@@ -60,6 +60,10 @@ Não há nenhum script de arranque: é o Docker que trata disto.
 - **Exceção:** um container parado à mão (`docker compose stop` ou `down`) antes do reboot fica parado depois dele. Resolve-se com `docker compose up -d --no-build`.
 - O `depends_on` com `service_healthy` só é respeitado pelo `docker compose up`, não pelo daemon no boot. Depois de um reboot, o `web` pode arrancar antes de o `rag-service` estar pronto, e os primeiros pedidos durante esses segundos recebem `502 rag_service_unavailable`.
 
+Testado com um reboot real em 12-09-2026: SSH de volta 46 segundos depois de `systemctl reboot`, e os 9 containers da VPS (os deste projeto, finas, onebox e n8n) voltaram todos sozinhos. `reposeer.me` respondeu `200` e as portas `8000` e `3002` continuaram fechadas a partir do exterior.
+
+Na VPS há um `pm2-root.service` enabled mas sem processos guardados (`dump.pm2` vazio). Nada deste projeto depende dele; se algum dia algo correr por pm2, só volta depois de um reboot se tiver sido feito `pm2 save`.
+
 ## Primeira instalação numa VPS nova
 
 1. `git clone https://github.com/todfilipe/rag-codebase-chat.git /root/rag-codebase-chat`

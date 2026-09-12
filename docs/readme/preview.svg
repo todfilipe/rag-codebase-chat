@@ -1,0 +1,319 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="690" viewBox="0 0 920 690" role="img" aria-labelledby="title desc">
+  <title id="title">RAG Codebase Chat walkthrough</title>
+  <desc id="desc">A browser window on facebook/react. The repository URL is typed and Analyze repository is pressed. Indexing moves through Reading repository structure, Reading code files, Generating embeddings, Saving to index and Ready. In the chat, the question about React reconciliation shows Searching the codebase, the sources panel fills with ReactFiberBeginWork.js, ReactFiber.js and ReactChildFiber.js, then the answer streams in with a code block and file citations.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+
+      .sA { animation: sA 20s infinite; }
+      .sB { animation: sB 20s infinite; }
+      .sC { animation: sC 20s infinite; }
+      @keyframes sA { 0%, 21% { opacity: 1; } 23%, 98% { opacity: 0; } 100% { opacity: 1; } }
+      @keyframes sB { 0%, 22% { opacity: 0; } 24%, 46% { opacity: 1; } 48%, 100% { opacity: 0; } }
+      @keyframes sC { 0%, 47% { opacity: 0; } 49%, 96% { opacity: 1; } 99%, 100% { opacity: 0; } }
+
+      .cover { animation: typing 20s infinite; }
+      @keyframes typing {
+        0%, 3% { transform: translateX(0); animation-timing-function: steps(33, end); }
+        14%, 96% { transform: translateX(277px); }
+        97%, 100% { transform: translateX(0); }
+      }
+      .caret { animation: caret 1s steps(1) infinite; }
+      @keyframes caret { 0% { opacity: 1; } 50% { opacity: 0; } }
+      .idle { animation: idle 20s infinite; }
+      .busy { animation: busy 20s infinite; }
+      @keyframes idle { 0%, 15.9% { opacity: 1; } 16%, 96% { opacity: 0; } 97%, 100% { opacity: 1; } }
+      @keyframes busy { 0%, 15.9% { opacity: 0; } 16%, 96% { opacity: 1; } 97%, 100% { opacity: 0; } }
+
+      .spin { transform-box: fill-box; transform-origin: center; animation: spin 1.2s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .bar { transform-box: fill-box; transform-origin: left center; animation: bar 20s infinite; }
+      @keyframes bar { 0%, 32% { transform: scaleX(0); } 40%, 100% { transform: scaleX(1); } }
+
+      .p1 { animation: p1 20s infinite; } .c1 { animation: c1 20s infinite; } .k1 { animation: k1 20s infinite; } .l1 { animation: l1 20s infinite; }
+      .p2 { animation: p2 20s infinite; } .c2 { animation: c2 20s infinite; } .k2 { animation: k2 20s infinite; } .l2 { animation: l2 20s infinite; }
+      .p3 { animation: p3 20s infinite; } .c3 { animation: c3 20s infinite; } .k3 { animation: k3 20s infinite; } .l3 { animation: l3 20s infinite; }
+      .p4 { animation: p4 20s infinite; } .c4 { animation: c4 20s infinite; } .k4 { animation: k4 20s infinite; } .l4 { animation: l4 20s infinite; }
+      .p5 { animation: p5 20s infinite; } .c5 { animation: c5 20s infinite; } .k5 { animation: k5 20s infinite; } .l5 { animation: l5 20s infinite; }
+      @keyframes p1 { 0%, 23.9% { opacity: 1; } 24%, 100% { opacity: 0; } }
+      @keyframes c1 { 0%, 23.9% { opacity: 0; } 24%, 27.9% { opacity: 1; } 28%, 100% { opacity: 0; } }
+      @keyframes k1 { 0%, 27.9% { opacity: 0; } 28%, 100% { opacity: 1; } }
+      @keyframes l1 { 0%, 23.9% { opacity: 0.5; } 24%, 100% { opacity: 1; } }
+      @keyframes p2 { 0%, 27.9% { opacity: 1; } 28%, 100% { opacity: 0; } }
+      @keyframes c2 { 0%, 27.9% { opacity: 0; } 28%, 31.9% { opacity: 1; } 32%, 100% { opacity: 0; } }
+      @keyframes k2 { 0%, 31.9% { opacity: 0; } 32%, 100% { opacity: 1; } }
+      @keyframes l2 { 0%, 27.9% { opacity: 0.5; } 28%, 100% { opacity: 1; } }
+      @keyframes p3 { 0%, 31.9% { opacity: 1; } 32%, 100% { opacity: 0; } }
+      @keyframes c3 { 0%, 31.9% { opacity: 0; } 32%, 40.9% { opacity: 1; } 41%, 100% { opacity: 0; } }
+      @keyframes k3 { 0%, 40.9% { opacity: 0; } 41%, 100% { opacity: 1; } }
+      @keyframes l3 { 0%, 31.9% { opacity: 0.5; } 32%, 100% { opacity: 1; } }
+      @keyframes p4 { 0%, 40.9% { opacity: 1; } 41%, 100% { opacity: 0; } }
+      @keyframes c4 { 0%, 40.9% { opacity: 0; } 41%, 43.9% { opacity: 1; } 44%, 100% { opacity: 0; } }
+      @keyframes k4 { 0%, 43.9% { opacity: 0; } 44%, 100% { opacity: 1; } }
+      @keyframes l4 { 0%, 40.9% { opacity: 0.5; } 41%, 100% { opacity: 1; } }
+      @keyframes p5 { 0%, 43.9% { opacity: 1; } 44%, 100% { opacity: 0; } }
+      @keyframes c5 { 0%, 43.9% { opacity: 0; } 44%, 44.9% { opacity: 1; } 45%, 100% { opacity: 0; } }
+      @keyframes k5 { 0%, 44.9% { opacity: 0; } 45%, 100% { opacity: 1; } }
+      @keyframes l5 { 0%, 43.9% { opacity: 0.5; } 44%, 100% { opacity: 1; } }
+
+      .user { animation: user 20s infinite; }
+      .bot { animation: bot 20s infinite; }
+      .searching { animation: searching 20s infinite; }
+      .writing { animation: writing 20s infinite; }
+      @keyframes user { 0%, 49.5% { opacity: 0; transform: translateY(6px); } 51.5%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes bot { 0%, 51% { opacity: 0; } 52%, 100% { opacity: 1; } }
+      @keyframes searching { 0%, 51.9% { opacity: 0; } 52% { opacity: 1; } 53.5% { opacity: 0.45; } 55% { opacity: 1; } 55.1%, 100% { opacity: 0; } }
+      @keyframes writing { 0%, 55% { opacity: 0; } 55.1% { opacity: 1; } 56.8% { opacity: 0.45; } 58.4% { opacity: 1; } 58.5%, 100% { opacity: 0; } }
+
+      .src1 { animation: src1 20s infinite; }
+      .src2 { animation: src2 20s infinite; }
+      .src3 { animation: src3 20s infinite; }
+      @keyframes src1 { 0%, 55% { opacity: 0; transform: translateY(6px); } 56.5%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes src2 { 0%, 56% { opacity: 0; transform: translateY(6px); } 57.5%, 100% { opacity: 1; transform: translateY(0); } }
+      @keyframes src3 { 0%, 57% { opacity: 0; transform: translateY(6px); } 58.5%, 100% { opacity: 1; transform: translateY(0); } }
+
+      .w1 { animation: w1 20s linear infinite; }
+      .w2 { animation: w2 20s linear infinite; }
+      .w3 { animation: w3 20s linear infinite; }
+      .w4 { animation: w4 20s linear infinite; }
+      @keyframes w1 { 0%, 58.5% { transform: translateX(0); } 61.5%, 100% { transform: translateX(530px); } }
+      @keyframes w2 { 0%, 61.5% { transform: translateX(0); } 65%, 100% { transform: translateX(530px); } }
+      @keyframes w3 { 0%, 65% { transform: translateX(0); } 68.5%, 100% { transform: translateX(530px); } }
+      @keyframes w4 { 0%, 68.5% { transform: translateX(0); } 72%, 100% { transform: translateX(530px); } }
+      .code { animation: code 20s infinite; }
+      .cites { animation: cites 20s infinite; }
+      @keyframes code { 0%, 72.5% { opacity: 0; } 74.5%, 100% { opacity: 1; } }
+      @keyframes cites { 0%, 76% { opacity: 0; } 78%, 100% { opacity: 1; } }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { animation: none !important; }
+        .sA, .sB, .transient, .wipe { opacity: 0; }
+      }
+    </style>
+    <filter id="lift" x="-10%" y="-10%" width="120%" height="135%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="24" result="blur"/>
+      <feOffset in="blur" dy="30" result="offset"/>
+      <feFlood flood-color="#0d1117" flood-opacity="0.6"/>
+      <feComposite operator="in" in2="offset"/>
+    </filter>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#f8a71d" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#f8a71d" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soften" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="36"/>
+    </filter>
+    <pattern id="dots" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="16" r="1" fill="#30363d"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.9"/>
+      <stop offset="0.9" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="fadeMask">
+      <rect x="0" y="44" width="880" height="556" fill="url(#fade)"/>
+    </mask>
+    <clipPath id="frame">
+      <rect width="880" height="600" rx="8"/>
+    </clipPath>
+    <clipPath id="field">
+      <rect x="204" y="304" width="326" height="40"/>
+    </clipPath>
+    <clipPath id="thread">
+      <rect x="0" y="93" width="596" height="440"/>
+    </clipPath>
+  </defs>
+
+  <g transform="translate(20 12)">
+    <rect width="880" height="600" rx="8" fill="#0d1117" filter="url(#lift)"/>
+
+    <g clip-path="url(#frame)">
+      <rect width="880" height="600" fill="#0d1117"/>
+      <rect width="880" height="44" fill="#161b22"/>
+      <line x1="0" y1="43.5" x2="880" y2="43.5" stroke="#30363d"/>
+      <circle cx="22" cy="22" r="5" fill="#30363d"/>
+      <circle cx="39" cy="22" r="5" fill="#30363d"/>
+      <circle cx="56" cy="22" r="5" fill="#30363d"/>
+      <path transform="translate(380 16) scale(0.75)" fill="#8b949e" d="M4 4a4 4 0 1 1 8 0v2h.25c.97 0 1.75.78 1.75 1.75v5.5c0 .97-.78 1.75-1.75 1.75h-8.5A1.75 1.75 0 0 1 2 13.25v-5.5C2 6.78 2.78 6 3.75 6H4Zm1.5 2h5V4a2.5 2.5 0 0 0-5 0Z"/>
+      <text x="396" y="26" class="mono" font-size="12" fill="#8b949e">facebook/react</text>
+
+      <g class="sA">
+        <ellipse cx="440" cy="230" rx="320" ry="170" fill="url(#glow)" filter="url(#soften)"/>
+        <rect x="0" y="44" width="880" height="556" fill="url(#dots)" mask="url(#fadeMask)"/>
+        <text x="440" y="236" class="sans" font-size="30" font-weight="700" letter-spacing="-0.9" text-anchor="middle" fill="#e6edf3">Ask questions about any GitHub repository</text>
+        <text x="440" y="266" class="sans" font-size="13" text-anchor="middle" fill="#8b949e">Answers grounded in the actual files, with citations you can check.</text>
+        <rect x="160.5" y="296.5" width="559" height="55" rx="8" fill="#161b22" stroke="#30363d"/>
+        <g transform="translate(174 315) scale(0.75)" fill="none" stroke="#8b949e" stroke-width="1.8" stroke-linecap="round">
+          <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.4"/>
+          <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.6"/>
+        </g>
+        <g clip-path="url(#field)">
+          <text x="208" y="329" class="mono" font-size="14" fill="#e6edf3" textLength="277" lengthAdjust="spacing">https://github.com/facebook/react</text>
+          <g class="cover">
+            <rect x="208" y="306" width="330" height="36" fill="#161b22"/>
+            <rect class="caret" x="208" y="315" width="1.5" height="18" fill="#e6edf3"/>
+          </g>
+        </g>
+        <rect x="536" y="303" width="178" height="42" rx="6" fill="#f8a71d"/>
+        <text x="551" y="329" class="sans idle" font-size="14" font-weight="600" fill="#0d1117">Analyze repository</text>
+        <text x="551" y="329" class="sans busy" font-size="14" font-weight="600" fill="#0d1117">Analyzing…</text>
+        <g transform="translate(686 316) scale(0.67)" fill="none" stroke="#0d1117" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </g>
+        <text x="440" y="380" class="sans" font-size="12" text-anchor="middle" fill="#8b949e">Try it with <tspan class="mono" fill="#f8a71d">facebook/react</tspan></text>
+      </g>
+
+      <g class="sB">
+        <text x="250" y="152" class="sans" font-size="14" fill="#8b949e">Analyzing <tspan class="mono" fill="#e6edf3">facebook/react</tspan></text>
+        <rect x="250.5" y="170.5" width="379" height="280" rx="8" fill="#161b22" stroke="#30363d"/>
+
+        <line x1="282" y1="223" x2="282" y2="245" stroke="#30363d"/>
+        <line x1="282" y1="271" x2="282" y2="293" stroke="#30363d"/>
+        <line x1="282" y1="319" x2="282" y2="357" stroke="#30363d"/>
+        <line x1="282" y1="383" x2="282" y2="405" stroke="#30363d"/>
+
+        <circle class="p1" cx="282" cy="210" r="9" fill="none" stroke="#30363d" stroke-width="2"/>
+        <g class="c1"><g class="spin"><circle cx="282" cy="210" r="9" fill="none" stroke="#30363d" stroke-width="2"/><path d="M282 201a9 9 0 0 1 9 9" fill="none" stroke="#f8a71d" stroke-width="2"/></g></g>
+        <g class="k1" transform="translate(272 200) scale(0.8333)" fill="none" stroke="#f8a71d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/></g>
+        <text class="l1 sans" x="304" y="215" font-size="14" fill="#e6edf3">Reading repository structure</text>
+
+        <circle class="p2" cx="282" cy="258" r="9" fill="none" stroke="#30363d" stroke-width="2"/>
+        <g class="c2"><g class="spin"><circle cx="282" cy="258" r="9" fill="none" stroke="#30363d" stroke-width="2"/><path d="M282 249a9 9 0 0 1 9 9" fill="none" stroke="#f8a71d" stroke-width="2"/></g></g>
+        <g class="k2" transform="translate(272 248) scale(0.8333)" fill="none" stroke="#f8a71d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/></g>
+        <text class="l2 sans" x="304" y="263" font-size="14" fill="#e6edf3">Reading code files</text>
+
+        <circle class="p3" cx="282" cy="306" r="9" fill="none" stroke="#30363d" stroke-width="2"/>
+        <g class="c3"><g class="spin"><circle cx="282" cy="306" r="9" fill="none" stroke="#30363d" stroke-width="2"/><path d="M282 297a9 9 0 0 1 9 9" fill="none" stroke="#f8a71d" stroke-width="2"/></g></g>
+        <g class="k3" transform="translate(272 296) scale(0.8333)" fill="none" stroke="#f8a71d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/></g>
+        <text class="l3 sans" x="304" y="311" font-size="14" fill="#e6edf3">Generating embeddings</text>
+        <rect x="304" y="326" width="290" height="4" rx="2" fill="#30363d"/>
+        <rect class="bar" x="304" y="326" width="290" height="4" rx="2" fill="#f8a71d"/>
+
+        <circle class="p4" cx="282" cy="370" r="9" fill="none" stroke="#30363d" stroke-width="2"/>
+        <g class="c4"><g class="spin"><circle cx="282" cy="370" r="9" fill="none" stroke="#30363d" stroke-width="2"/><path d="M282 361a9 9 0 0 1 9 9" fill="none" stroke="#f8a71d" stroke-width="2"/></g></g>
+        <g class="k4" transform="translate(272 360) scale(0.8333)" fill="none" stroke="#f8a71d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/></g>
+        <text class="l4 sans" x="304" y="375" font-size="14" fill="#e6edf3">Saving to index</text>
+
+        <circle class="p5" cx="282" cy="418" r="9" fill="none" stroke="#30363d" stroke-width="2"/>
+        <g class="c5"><g class="spin"><circle cx="282" cy="418" r="9" fill="none" stroke="#30363d" stroke-width="2"/><path d="M282 409a9 9 0 0 1 9 9" fill="none" stroke="#f8a71d" stroke-width="2"/></g></g>
+        <g class="k5" transform="translate(272 408) scale(0.8333)" fill="none" stroke="#f8a71d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/></g>
+        <text class="l5 sans" x="304" y="423" font-size="14" fill="#e6edf3">Ready</text>
+      </g>
+
+      <g class="sC">
+        <line x1="0" y1="92.5" x2="880" y2="92.5" stroke="#30363d"/>
+        <path transform="translate(24 60)" fill="#8b949e" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        <text x="50" y="73" class="mono" font-size="14" fill="#e6edf3">facebook/react</text>
+        <rect x="714.5" y="56.5" width="142" height="26" rx="6" fill="none" stroke="#30363d"/>
+        <text x="785.5" y="73.5" class="sans" font-size="12" text-anchor="middle" fill="#8b949e">Change repository</text>
+
+        <rect x="600" y="93" width="280" height="507" fill="#161b22"/>
+        <line x1="600.5" y1="93" x2="600.5" y2="600" stroke="#30363d"/>
+        <text x="620" y="122" class="sans" font-size="11" font-weight="600" letter-spacing="1.8" fill="#8b949e">SOURCES</text>
+
+        <g class="src1">
+          <rect x="612.5" y="138.5" width="255" height="76" rx="6" fill="#0d1117" stroke="#30363d"/>
+          <path transform="translate(626 152) scale(0.75)" fill="#8b949e" d="M2 1.75C2 .78 2.78 0 3.75 0h5.19c.46 0 .91.18 1.24.51l3.31 3.31c.33.33.51.78.51 1.24v9.19c0 .97-.78 1.75-1.75 1.75h-8.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5Z"/>
+          <text x="644" y="162" class="mono" font-size="12" fill="#e6edf3">ReactFiberBeginWork.js</text>
+          <path transform="translate(840 151) scale(0.5)" d="m6 9 6 6 6-6" fill="none" stroke="#8b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="626" y="181" class="mono" font-size="11" fill="#8b949e">packages/react-reconciler/src/React…</text>
+          <rect x="626" y="196" width="228" height="4" rx="2" fill="#30363d"/>
+          <rect x="626" y="196" width="164" height="4" rx="2" fill="#f8a71d"/>
+        </g>
+        <g class="src2">
+          <rect x="612.5" y="226.5" width="255" height="76" rx="6" fill="#0d1117" stroke="#30363d"/>
+          <path transform="translate(626 240) scale(0.75)" fill="#8b949e" d="M2 1.75C2 .78 2.78 0 3.75 0h5.19c.46 0 .91.18 1.24.51l3.31 3.31c.33.33.51.78.51 1.24v9.19c0 .97-.78 1.75-1.75 1.75h-8.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5Z"/>
+          <text x="644" y="250" class="mono" font-size="12" fill="#e6edf3">ReactFiber.js</text>
+          <path transform="translate(840 239) scale(0.5)" d="m6 9 6 6 6-6" fill="none" stroke="#8b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="626" y="269" class="mono" font-size="11" fill="#8b949e">packages/react-reconciler/src/React…</text>
+          <rect x="626" y="284" width="228" height="4" rx="2" fill="#30363d"/>
+          <rect x="626" y="284" width="146" height="4" rx="2" fill="#f8a71d"/>
+        </g>
+        <g class="src3">
+          <rect x="612.5" y="314.5" width="255" height="76" rx="6" fill="#0d1117" stroke="#30363d"/>
+          <path transform="translate(626 328) scale(0.75)" fill="#8b949e" d="M2 1.75C2 .78 2.78 0 3.75 0h5.19c.46 0 .91.18 1.24.51l3.31 3.31c.33.33.51.78.51 1.24v9.19c0 .97-.78 1.75-1.75 1.75h-8.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5Z"/>
+          <text x="644" y="338" class="mono" font-size="12" fill="#e6edf3">ReactChildFiber.js</text>
+          <path transform="translate(840 327) scale(0.5)" d="m6 9 6 6 6-6" fill="none" stroke="#8b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="626" y="357" class="mono" font-size="11" fill="#8b949e">packages/react-reconciler/src/React…</text>
+          <rect x="626" y="372" width="228" height="4" rx="2" fill="#30363d"/>
+          <rect x="626" y="372" width="128" height="4" rx="2" fill="#f8a71d"/>
+        </g>
+
+        <g class="user">
+          <rect x="28.5" y="116.5" width="27" height="27" rx="6" fill="#0d1117" stroke="#30363d"/>
+          <g transform="translate(35 123) scale(0.5833)" fill="none" stroke="#8b949e" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="12" cy="8" r="3.5"/>
+            <path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5"/>
+          </g>
+          <text x="70" y="134" class="sans" font-size="13" fill="#e6edf3">How does the React reconciliation algorithm handle fiber node</text>
+          <text x="70" y="154" class="sans" font-size="13" fill="#e6edf3">updates in the current version?</text>
+        </g>
+
+        <g class="bot">
+          <rect x="28.5" y="184.5" width="27" height="27" rx="6" fill="#0d1117" stroke="#30363d"/>
+          <g transform="translate(35 191) scale(0.5833)" fill="none" stroke="#8b949e" stroke-width="1.7" stroke-linejoin="round">
+            <rect x="4" y="7" width="16" height="12" rx="3"/>
+            <path d="M12 3v4M9 13h.01M15 13h.01" stroke-linecap="round"/>
+          </g>
+        </g>
+        <text x="70" y="202" class="sans searching transient" font-size="13" fill="#8b949e">Searching the codebase…</text>
+        <text x="70" y="202" class="sans writing transient" font-size="13" fill="#8b949e">Writing…</text>
+
+        <g clip-path="url(#thread)">
+          <text x="70" y="202" class="sans" font-size="13" fill="#8b949e">In</text>
+          <rect x="88.5" y="188.5" width="381" height="20" rx="4" fill="#f8a71d" fill-opacity="0.1" stroke="#f8a71d" stroke-opacity="0.4"/>
+          <text x="94" y="202" class="mono" font-size="12" fill="#f8a71d" textLength="370" lengthAdjust="spacing">packages/react-reconciler/src/ReactFiberBeginWork.js</text>
+          <text x="472" y="202" class="sans" font-size="13" fill="#8b949e">,</text>
+          <rect class="w1 wipe" x="66" y="184" width="530" height="28" fill="#0d1117"/>
+
+          <text x="70" y="228" class="sans" font-size="13" fill="#8b949e">the reconciliation logic is distributed across several key functions.</text>
+          <rect class="w2 wipe" x="66" y="212" width="530" height="22" fill="#0d1117"/>
+
+          <text x="70" y="250" class="sans" font-size="13" fill="#8b949e">When an update is triggered, React creates a new fiber node (the</text>
+          <rect class="w3 wipe" x="66" y="234" width="530" height="22" fill="#0d1117"/>
+
+          <text x="70" y="272" class="sans" font-size="13" fill="#8b949e">"work-in-progress" fiber) using the <tspan class="mono" font-size="12" fill="#f8a71d">createWorkInProgress</tspan> function.</text>
+          <rect class="w4 wipe" x="66" y="256" width="530" height="22" fill="#0d1117"/>
+        </g>
+
+        <g class="code">
+          <rect x="70.5" y="290.5" width="505" height="190" rx="8" fill="#161b22" stroke="#30363d"/>
+          <line x1="71" y1="322.5" x2="575" y2="322.5" stroke="#30363d"/>
+          <text x="84" y="311" class="mono" font-size="11" fill="#8b949e">ReactFiberBeginWork.js</text>
+          <g transform="translate(552 299) scale(0.5833)" fill="none" stroke="#8b949e" stroke-width="1.7" stroke-linejoin="round">
+            <rect x="9" y="9" width="11" height="11" rx="2"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h8"/>
+          </g>
+          <g class="mono" font-size="12" fill="#e6edf3">
+            <text x="84" y="346"><tspan fill="#f8a71d">function</tspan> <tspan fill="#3fb950">beginWork</tspan>(current, workInProgress, renderLanes) {</text>
+            <text x="100" y="366" fill="#8b949e">// Check for recurring updates</text>
+            <text x="100" y="386"><tspan fill="#f8a71d">if</tspan> (current !== <tspan fill="#f8a71d">null</tspan>) {</text>
+            <text x="116" y="406"><tspan fill="#f8a71d">const</tspan> oldProps = current.memoizedProps;</text>
+            <text x="116" y="426"><tspan fill="#f8a71d">const</tspan> newProps = workInProgress.pendingProps;</text>
+            <text x="100" y="446">}</text>
+            <text x="84" y="466">}</text>
+          </g>
+        </g>
+
+        <g class="cites">
+          <rect x="70.5" y="494.5" width="122" height="26" rx="6" fill="#161b22" stroke="#30363d"/>
+          <path transform="translate(80 501) scale(0.75)" fill="#8b949e" d="M2 1.75C2 .78 2.78 0 3.75 0h5.19c.46 0 .91.18 1.24.51l3.31 3.31c.33.33.51.78.51 1.24v9.19c0 .97-.78 1.75-1.75 1.75h-8.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5Z"/>
+          <text x="97" y="511.5" class="mono" font-size="11" fill="#8b949e">ReactFiber.js</text>
+          <rect x="200.5" y="494.5" width="156" height="26" rx="6" fill="#161b22" stroke="#30363d"/>
+          <path transform="translate(210 501) scale(0.75)" fill="#8b949e" d="M2 1.75C2 .78 2.78 0 3.75 0h5.19c.46 0 .91.18 1.24.51l3.31 3.31c.33.33.51.78.51 1.24v9.19c0 .97-.78 1.75-1.75 1.75h-8.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5Z"/>
+          <text x="227" y="511.5" class="mono" font-size="11" fill="#8b949e">ReactChildFiber.js</text>
+        </g>
+
+        <line x1="0" y1="540.5" x2="600" y2="540.5" stroke="#30363d"/>
+        <rect x="24.5" y="552.5" width="551" height="36" rx="8" fill="#161b22" stroke="#30363d"/>
+        <text x="38" y="575" class="sans" font-size="13" fill="#8b949e">Ask a question about this repository...</text>
+        <rect x="543" y="557.5" width="28" height="26" rx="6" fill="#f8a71d"/>
+        <g transform="translate(550 563.5) scale(0.5833)" fill="none" stroke="#0d1117" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </g>
+      </g>
+    </g>
+    <rect x="0.5" y="0.5" width="879" height="599" rx="7.5" fill="none" stroke="#30363d"/>
+  </g>
+</svg>

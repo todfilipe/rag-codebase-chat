@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="396" viewBox="0 0 880 396" role="img" aria-labelledby="title desc">
+  <title id="title">Roadmap progress</title>
+  <desc id="desc">Phase 0, monorepo skeleton: 6 of 6. Phase 1, RAG pipeline ported to Python: 9 of 9. Phase 2, web and rag-service contract: 6 of 6. Phase 3, chat interface: 4 of 4. Phase 4, auth and per-user isolation: 5 of 5. Phase 5, dashboard and billing: 6 of 6. Phase 6, quality, deploy and launch: 7 of 10. 43 of 46 steps done, from docs/ROADMAP.md.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+      .fill { transform-box: fill-box; transform-origin: left center; transform: scaleX(0); animation: grow 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+      .r1 { animation-delay: 0.1s; } .r2 { animation-delay: 0.2s; } .r3 { animation-delay: 0.3s; } .r4 { animation-delay: 0.4s; }
+      .r5 { animation-delay: 0.5s; } .r6 { animation-delay: 0.6s; } .r7 { animation-delay: 0.7s; }
+      .pulse { animation: pulse 2.4s ease-in-out infinite; }
+      @keyframes grow { to { transform: scaleX(1); } }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+      @media (prefers-reduced-motion: reduce) {
+        .fill { animation: none; transform: none; }
+        .pulse { animation: none; }
+      }
+    </style>
+  </defs>
+  <rect x="0.5" y="0.5" width="879" height="395" rx="8" fill="#0d1117" stroke="#30363d"/>
+
+  <g class="sans">
+    <text x="28" y="50" class="mono" font-size="12" fill="#f8a71d">Phase 0</text>
+    <text x="110" y="50" font-size="14" fill="#e6edf3">Monorepo skeleton</text>
+    <rect x="470" y="42" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r1" x="470" y="42" width="320" height="6" rx="3" fill="#3fb950"/>
+    <text x="852" y="50" class="mono" font-size="12" text-anchor="end" fill="#8b949e">6/6</text>
+
+    <text x="28" y="94" class="mono" font-size="12" fill="#f8a71d">Phase 1</text>
+    <text x="110" y="94" font-size="14" fill="#e6edf3">RAG pipeline ported to Python</text>
+    <rect x="470" y="86" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r2" x="470" y="86" width="320" height="6" rx="3" fill="#3fb950"/>
+    <text x="852" y="94" class="mono" font-size="12" text-anchor="end" fill="#8b949e">9/9</text>
+
+    <text x="28" y="138" class="mono" font-size="12" fill="#f8a71d">Phase 2</text>
+    <text x="110" y="138" font-size="14" fill="#e6edf3">web and rag-service contract</text>
+    <rect x="470" y="130" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r3" x="470" y="130" width="320" height="6" rx="3" fill="#3fb950"/>
+    <text x="852" y="138" class="mono" font-size="12" text-anchor="end" fill="#8b949e">6/6</text>
+
+    <text x="28" y="182" class="mono" font-size="12" fill="#f8a71d">Phase 3</text>
+    <text x="110" y="182" font-size="14" fill="#e6edf3">Chat interface</text>
+    <rect x="470" y="174" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r4" x="470" y="174" width="320" height="6" rx="3" fill="#3fb950"/>
+    <text x="852" y="182" class="mono" font-size="12" text-anchor="end" fill="#8b949e">4/4</text>
+
+    <text x="28" y="226" class="mono" font-size="12" fill="#f8a71d">Phase 4</text>
+    <text x="110" y="226" font-size="14" fill="#e6edf3">Auth and per-user isolation</text>
+    <rect x="470" y="218" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r5" x="470" y="218" width="320" height="6" rx="3" fill="#3fb950"/>
+    <text x="852" y="226" class="mono" font-size="12" text-anchor="end" fill="#8b949e">5/5</text>
+
+    <text x="28" y="270" class="mono" font-size="12" fill="#f8a71d">Phase 5</text>
+    <text x="110" y="270" font-size="14" fill="#e6edf3">Dashboard and billing</text>
+    <rect x="470" y="262" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r6" x="470" y="262" width="320" height="6" rx="3" fill="#3fb950"/>
+    <text x="852" y="270" class="mono" font-size="12" text-anchor="end" fill="#8b949e">6/6</text>
+
+    <text x="28" y="314" class="mono" font-size="12" fill="#f8a71d">Phase 6</text>
+    <text x="110" y="314" font-size="14" fill="#e6edf3">Quality, deploy and launch</text>
+    <circle class="pulse" cx="446" cy="309" r="3.5" fill="#f8a71d"/>
+    <rect x="470" y="306" width="320" height="6" rx="3" fill="#30363d"/>
+    <rect class="fill r7" x="470" y="306" width="224" height="6" rx="3" fill="#f8a71d"/>
+    <text x="852" y="314" class="mono" font-size="12" text-anchor="end" fill="#e6edf3">7/10</text>
+  </g>
+
+  <line x1="28" y1="342.5" x2="852" y2="342.5" stroke="#30363d"/>
+  <text x="28" y="372" class="mono" font-size="12" fill="#8b949e"><tspan fill="#e6edf3">43</tspan> of 46 steps done</text>
+  <text x="852" y="372" class="mono" font-size="12" text-anchor="end" fill="#8b949e">source: docs/ROADMAP.md</text>
+</svg>

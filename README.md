@@ -1,205 +1,466 @@
-# RAG Codebase Chat
+<a id="top"></a>
 
-Faz perguntas em linguagem natural sobre qualquer repositório GitHub público e recebe respostas fundamentadas no código real, com citação dos ficheiros usados como fonte.
+<div align="center">
 
-## O que faz e que problema resolve
+<img src="docs/readme/hero.svg" width="100%" alt="RAG Codebase Chat. No LangChain, every layer built from scratch. Ask questions about any GitHub repository. Instant semantic search and code reasoning for your entire codebase. Answers grounded in the actual files, with citations you can check.">
 
-Ler um codebase desconhecido é lento. Procurar "onde é que isto está definido?" ou "como funciona este fluxo?" obriga a saltar entre ficheiros e a adivinhar por onde começar.
+<br><br>
 
-O **RAG Codebase Chat** resolve isto indexando o repositório uma vez e permitindo depois interrogá-lo em linguagem natural. O sistema:
+<a href="https://reposeer.me"><img src="docs/readme/button-website.svg" height="40" alt="Website"></a>
+<a href="docs/"><img src="docs/readme/button-docs.svg" height="40" alt="Docs"></a>
+<a href="#architecture"><img src="docs/readme/button-architecture.svg" height="40" alt="Architecture"></a>
 
-1. Lê os ficheiros de código do repositório via GitHub API.
-2. Parte cada ficheiro em pedaços (*chunks*) e gera um *embedding* (vetor semântico) para cada um.
-3. Guarda esses vetores no Postgres com a extensão `pgvector`.
-4. Quando fazes uma pergunta, converte-a também num vetor, procura os *chunks* mais parecidos por *cosine similarity*, e envia esses excertos a um LLM para gerar a resposta final citando os ficheiros de origem.
+<br><br>
 
-Este padrão chama-se **RAG** (Retrieval-Augmented Generation): em vez de pedir ao modelo que "adivinhe" a partir do que memorizou, dá-se-lhe o contexto relevante recuperado da base de dados, o que reduz alucinações e permite responder sobre código que o modelo nunca viu.
+<a href="https://github.com/todfilipe/rag-codebase-chat/actions/workflows/deploy.yml"><img src="https://img.shields.io/github/actions/workflow/status/todfilipe/rag-codebase-chat/deploy.yml?branch=main&style=flat-square&labelColor=161b22&color=f8a71d&label=CI" alt="CI status"></a>
+<img src="https://img.shields.io/badge/Python-3.12-f8a71d?style=flat-square&labelColor=161b22" alt="Python 3.12">
+<img src="https://img.shields.io/badge/Next.js-16-f8a71d?style=flat-square&labelColor=161b22" alt="Next.js 16">
+<img src="https://img.shields.io/badge/FastAPI-0.116%2B-f8a71d?style=flat-square&labelColor=161b22" alt="FastAPI 0.116+">
+<img src="https://img.shields.io/badge/pgvector-HNSW-f8a71d?style=flat-square&labelColor=161b22" alt="pgvector with HNSW">
 
-> Todo o pipeline de RAG (chunking, embeddings, *vector search*, geração) foi construído de raiz, sem LangChain nem outras abstrações, por opção deliberada.
+<br><br>
 
-## Stack tecnológico
+<a href="#product"><img src="docs/readme/nav-product.svg" height="34" alt="Product"></a>
+<a href="#how-it-works"><img src="docs/readme/nav-how-it-works.svg" height="34" alt="How it works"></a>
+<a href="#architecture"><img src="docs/readme/nav-architecture.svg" height="34" alt="Architecture"></a>
+<a href="#features"><img src="docs/readme/nav-features.svg" height="34" alt="Features"></a>
+<a href="#decisions"><img src="docs/readme/nav-decisions.svg" height="34" alt="Decisions"></a>
+<a href="#quickstart"><img src="docs/readme/nav-quickstart.svg" height="34" alt="Quickstart"></a>
+<a href="#roadmap"><img src="docs/readme/nav-roadmap.svg" height="34" alt="Roadmap"></a>
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Framework / Runtime | [Next.js](https://nextjs.org) 16 (App Router) · React 19 |
-| Linguagem | TypeScript 5 (modo estrito) |
-| Base de dados | Supabase (PostgreSQL + extensão `pgvector`) via [`@supabase/supabase-js`](https://github.com/supabase/supabase-js) |
-| Embeddings | Google Gemini — modelo `gemini-embedding-2` (768 dimensões) |
-| Geração de respostas | Google Gemini — modelo `gemini-3.1-flash-lite-preview` |
-| Fonte de código | GitHub REST API (v2022-11-28) |
-| Estilos | Tailwind CSS 4 |
-| Lint | ESLint 9 (`eslint-config-next`) |
+</div>
 
-> **Nota sobre versões:** os números de versão acima refletem exatamente o que está declarado no `package.json`. Os nomes dos modelos Gemini são os que estão definidos em [`lib/gemini.ts`](lib/gemini.ts) e [`lib/generator.ts`](lib/generator.ts).
+<br>
 
-## Funcionalidades principais
+<a id="product"></a>
 
-- **Parsing e validação de URLs do GitHub** — aceita URLs normais e de `git clone` (`.git`), rejeitando URLs que não pertençam ao `github.com`. Ver [`lib/github.ts`](lib/github.ts).
-- **Listagem e filtragem inteligente de ficheiros** — descobre o *branch* principal automaticamente (`main` ou `master`), percorre a árvore completa do repositório e filtra por extensão, tamanho (máx. 100 KB) e diretórios ignorados (`node_modules`, `dist`, `.git`, etc.).
-- **Chunking com sobreposição** — divide o texto em pedaços de 2000 caracteres com 200 de sobreposição, para não cortar contexto a meio de uma fronteira de *chunk*. Ver [`lib/chunker.ts`](lib/chunker.ts).
-- **Geração de embeddings** — vetores de 768 dimensões via Gemini, com verificação explícita da dimensão devolvida. Ver [`lib/gemini.ts`](lib/gemini.ts).
-- **Indexação end-to-end com concorrência controlada** — *upsert* do repositório, limpeza dos *chunks* antigos (*clean slate* a cada reindexação) e processamento em *pools* de 5 chamadas paralelas para respeitar o *rate limit* da API. Ver [`lib/indexer.ts`](lib/indexer.ts).
-- **Vector search isolado por repositório** — recupera os *top-k* *chunks* mais similares através de uma função SQL `match_chunks`, filtrando sempre por `repo_id` para que repositórios diferentes nunca se misturem. Ver [`lib/retriever.ts`](lib/retriever.ts).
-- **Geração de respostas com *grounding* e citação de fontes** — o modelo é instruído a responder apenas com base nos excertos fornecidos, a admitir quando não tem informação suficiente e a citar os ficheiros usados. Ver [`lib/generator.ts`](lib/generator.ts).
+<img src="docs/readme/section-01.svg" width="100%" alt="01 / Product: See it answer from the code">
 
-## Pré-requisitos
+Paste a public GitHub URL, watch it index, then ask. The sources panel fills as soon as retrieval finishes, before the first token of the answer is written.
 
-- **Node.js** 20 ou superior (exigido pelas dependências e tipos declarados).
-- **npm** (ou outro gestor compatível; os exemplos usam npm).
-- **Conta Supabase** com um projeto onde a extensão `pgvector` esteja ativada.
-- **Chave da API Gemini** (Google AI Studio).
-- **GitHub Personal Access Token** com permissão de leitura de repositórios públicos.
+<img src="docs/readme/preview.svg" width="100%" alt="Walkthrough on facebook/react: the repository URL is typed and Analyze repository is pressed; indexing moves through Reading repository structure, Reading code files, Generating embeddings, Saving to index and Ready; a question about React reconciliation shows Searching the codebase while the sources panel fills with ReactFiberBeginWork.js, ReactFiber.js and ReactChildFiber.js; the answer then streams in with a code block and file citations.">
 
-## Instalação
+<sub>Illustrative walkthrough built from the app's own interface copy and the sample conversation on the landing page.</sub>
 
-### 1. Clonar e instalar dependências
+<!-- [CONFIRMAR: demo.gif] Gravar em reposeer.me (tema escuro, 1280x800, DPR 2, ~12 s): colar https://github.com/sindresorhus/slugify, stepper até Ready, clicar uma pergunta sugerida, deixar o painel de fontes encher e a resposta terminar, abrir um cartão de fonte. Guardar em docs/readme/demo.gif (< 5 MB) e acrescentar aqui: <img src="docs/readme/demo.gif" width="100%" alt="Screen recording of the real app"> -->
 
-```bash
-git clone <URL-DO-TEU-REPOSITORIO>
-cd rag-codebase-chat
-npm install
+<br>
+
+<a id="why"></a>
+
+<img src="docs/readme/section-02.svg" width="100%" alt="02 / Why: Reading an unfamiliar codebase is slow">
+
+<p align="center">
+<img src="docs/readme/card-problem.svg" width="49%" alt="The problem. Unfamiliar code is slow to read: finding where something is defined or how a flow works means jumping between files and guessing where to start.">
+<img src="docs/readme/card-solution.svg" width="49%" alt="The approach. Index once, then just ask: the repository is indexed a single time, and answers come from the retrieved code and cite the files they used, so you can check them.">
+</p>
+
+<br>
+
+<a id="how-it-works"></a>
+
+<img src="docs/readme/section-03.svg" width="100%" alt="03 / How it works: Two pipelines, one vector store">
+
+Indexing and answering are two separate flows in `apps/rag-service` that meet in one Postgres table. Every value below is read from the code: `chunker.py`, `embeddings.py`, `github_client.py`, `retriever.py`, `generator.py`.
+
+<img src="docs/readme/pipeline.svg" width="100%" alt="Indexing, POST /index: GitHub API reads the tree and blobs without cloning; files are filtered by 34 extensions and 100 KB and diffed by git blob SHA; chunked into 2000 characters with 200 overlap; embedded with gemini-embedding-2 at 768 dimensions in batches of 25; stored in code_chunks and indexed_files in Supabase Postgres with pgvector and an HNSW cosine index. Question, POST /query: user_id from the session; question embedded with the same model; match_chunks returns the top 5 with no cutoff; gemini-3.1-flash-lite-preview generates; the answer streams over SSE as sources, then token events, then done.">
+
+<details>
+<summary><b>Sequence: asking a question</b></summary>
+<br>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser
+    participant W as web (Next.js)
+    participant R as rag-service (FastAPI)
+    participant G as Gemini
+    participant S as Supabase
+
+    B->>W: POST /api/query { repoId, question }
+    W->>W: session user, rate limit, monthly message quota
+    W->>R: POST /query + Bearer token + user_id from session
+    R->>G: embedContent (768-dim)
+    R->>S: rpc match_chunks(embedding, repo_id, user_id, 5)
+    R-->>W: event: sources
+    W-->>B: event: sources
+    R->>G: streamGenerateContent?alt=sse
+    loop while Gemini writes
+        R-->>W: event: token
+        W-->>B: event: token
+    end
+    R-->>W: event: done
+    W-->>B: event: done
 ```
 
-### 2. Preparar a base de dados (Supabase)
+</details>
 
-No teu projeto Supabase, ativa a extensão `pgvector` e cria o schema. A estrutura abaixo é a documentada em [`decisions.md`](decisions.md) e usada pelo código:
+<details>
+<summary><b>Sequence: indexing a repository</b></summary>
+<br>
 
-- Tabela **`repos`** — `id` (UUID, chave primária), `owner`, `repo`, `url`, com restrição de unicidade em `(owner, repo)`.
-- Tabela **`code_chunks`** — `repo_id` (chave estrangeira para `repos.id` com `ON DELETE CASCADE`), `file_path`, `content`, `start_offset`, `end_offset`, `chunk_index` e `embedding` (`vector(768)`).
-- Função SQL **`match_chunks(query_embedding, match_repo_id, match_count)`** — devolve os *chunks* mais similares de um dado repositório, ordenados por *cosine similarity*.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser
+    participant W as web (Next.js)
+    participant R as rag-service (FastAPI)
+    participant H as GitHub API
+    participant G as Gemini
+    participant S as Supabase
 
-> ℹ️ Os scripts SQL de criação de tabelas e da função `match_chunks` não estão versionados neste repositório. Consulta [`decisions.md`](decisions.md) para o desenho exato das tabelas e do isolamento por `repo_id`. **[PLACEHOLDER: adicionar as migrations SQL ao repositório, ex. numa pasta `supabase/`.]**
-
-### 3. Configurar variáveis de ambiente
-
-Cria um ficheiro `.env.local` na raiz do projeto (está ignorado pelo Git). Ver a secção [Variáveis de ambiente](#variáveis-de-ambiente) para a descrição de cada uma:
-
-```bash
-GEMINI_API_KEY=a-tua-chave-gemini
-GITHUB_TOKEN=o-teu-github-token
-SUPABASE_URL=https://o-teu-projeto.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=a-tua-service-role-key
+    B->>W: POST /api/index { repoUrl }
+    W->>W: session user, rate limit, repository quota
+    W->>R: POST /index + Bearer token + user_id
+    R->>S: upsert repos row
+    R->>H: repo info + recursive tree
+    R-->>W: 202 { repo_id, files_found }
+    W-->>B: 202, redirect to /repo/{repo_id}
+    par background task
+        R->>S: stored blob SHAs from indexed_files
+        R->>H: blobs of changed files only
+        R->>R: chunk 2000/200, check chunk quotas
+        R->>G: batchEmbedContents, 25 per request
+        R->>S: insert code_chunks, then indexed_files
+    and every 2 seconds
+        B->>W: GET /api/index/{repo_id}/status
+        W->>R: GET /index/{repo_id}/status?user_id
+    end
 ```
 
-## Correr localmente
+</details>
 
-Arrancar o servidor de desenvolvimento:
+<br>
+
+<a id="architecture"></a>
+
+<img src="docs/readme/section-04.svg" width="100%" alt="04 / Architecture: Two services, two auth boundaries">
+
+<img src="docs/readme/architecture.svg" width="100%" alt="The browser reaches nginx on a single VPS over HTTPS. nginx terminates TLS and proxies to the web container on 127.0.0.1:3002 with buffering off for the SSE route. Inside docker compose, web calls rag-service over the internal network; rag-service publishes no port. web talks to Stripe, reads Supabase under RLS, and writes subscriptions from the Stripe webhook with the service_role key. rag-service talks to Supabase with the service_role key, to Gemini and to the GitHub API. Images are built in GitHub Actions, pushed to GHCR and pulled on the VPS manually.">
+
+Two boundaries, and neither replaces the other:
+
+1. **Session.** The browser only ever talks to `web`. `proxy.ts` validates the Supabase Auth cookie with `getUser()`, and every Route Handler takes `user_id` from that session, never from the request body.
+2. **Service.** `web` calls `rag-service` with `Authorization: Bearer <RAG_SERVICE_INTERNAL_TOKEN>`, checked with `secrets.compare_digest`. Only `GET /health` answers without it, and the service is not reachable from outside the compose network anyway.
+
+Deploys, rollback by commit SHA and reboot behaviour are documented in [`docs/DEPLOY.md`](docs/DEPLOY.md). The service contract lives in [`docs/API-CONTRACT.md`](docs/API-CONTRACT.md).
+
+<br>
+
+<a id="features"></a>
+
+<img src="docs/readme/section-05.svg" width="100%" alt="05 / Features: What ships today">
+
+<p align="center">
+<img src="docs/readme/card-repository.svg" width="32%" alt="Any public repository: paste a github.com URL; files are read through the GitHub API, no clone, with extension, size and folder filters.">
+<img src="docs/readme/card-progress.svg" width="32%" alt="Live indexing progress: five named steps and a chunk counter, polled every 2 seconds; the repo id lives in the URL, so refresh is safe.">
+<img src="docs/readme/card-incremental.svg" width="32%" alt="Incremental reindex: git blob SHAs decide what changed; unchanged files are never downloaded or embedded again.">
+<img src="docs/readme/card-streaming.svg" width="32%" alt="Streaming answers: tokens arrive over Server-Sent Events, proxied by Next.js without buffering and cancelled when the tab closes.">
+<img src="docs/readme/card-sources.svg" width="32%" alt="Sources before tokens: retrieved chunks arrive first, with the excerpt, a match score and a link to the exact lines on GitHub.">
+<img src="docs/readme/card-login.svg" width="32%" alt="GitHub or email login: Supabase Auth; GitHub OAuth asks only for user:email, never for access to anyone's repositories.">
+<img src="docs/readme/card-dashboard.svg" width="32%" alt="Repository dashboard: reindex or remove repositories and track repos, messages and chunks indexed this month against the plan.">
+<img src="docs/readme/card-billing.svg" width="32%" alt="Stripe plans: Free, Pro and Ultra with Checkout, the customer portal and signature-checked subscription webhooks.">
+<img src="docs/readme/card-isolation.svg" width="32%" alt="Per-user isolation: every chunk carries a user_id; match_chunks filters on it and RLS policies guard the web app's reads.">
+</p>
+
+<details>
+<summary><b>Plan limits</b>, straight from <code>supabase/migrations/0004_billing.sql</code></summary>
+<br>
+
+| | Free | Pro | Ultra |
+|---|---:|---:|---:|
+| Price per month | €0 | €9 | €28 |
+| Repositories | 3 | 30 | 70 |
+| Chunks per repository | 1,000 | 10,000 | 40,000 |
+| Messages per month | 100 | 1,500 | 5,000 |
+| Chunks indexed per month (fair use) | 5,000 | 70,000 | 200,000 |
+
+Repository and message limits are enforced in `apps/web` before `rag-service` is called (`402`). Chunk limits are enforced in `rag-service` between chunking and the first embedding, so a refused indexing job costs nothing.
+
+</details>
+
+<br>
+
+<a id="decisions"></a>
+
+<img src="docs/readme/section-06.svg" width="100%" alt="06 / Decisions: Why it is built this way">
+
+Condensed from [`decisions.md`](decisions.md) and [`docs/LOGICA-DO-PROJETO.md`](docs/LOGICA-DO-PROJETO.md), where each entry has its date and the alternatives that were rejected.
+
+<details>
+<summary><b>Why a separate Python service for RAG?</b></summary>
+<br>
+
+**Context.** The first prototype was a single Next.js app with the whole pipeline in TypeScript.
+
+**Decision.** Ingestion, chunking, embeddings, retrieval, generation and streaming moved to FastAPI in `apps/rag-service`. Next.js keeps identity, billing, the dashboard and the proxy. The rule: code that touches source text, vectors or the LLM goes to Python; identity, payments and presentation stay in `apps/web`.
+
+**Trade-off.** Two services to build and deploy, and a network boundary with new failure modes. The web app turns them into explicit errors: `502 rag_service_unavailable`, `504 upstream_timeout`, and the upstream `401` for a wrong token.
+
+</details>
+
+<details>
+<summary><b>Why no LangChain, and no vendor SDKs?</b></summary>
+<br>
+
+**Context.** The goal was to understand every layer of RAG, not only to get answers out of it.
+
+**Decision.** GitHub, Gemini and Supabase are called over plain HTTP with `httpx` (and `fetch` on the web side). Writes go straight to PostgREST: an upsert is a `POST` with `Prefer: resolution=merge-duplicates`, similarity search is `POST /rpc/match_chunks`.
+
+**Trade-off.** PostgREST details show up in the code (`return=minimal`, `application/vnd.pgrst.object+json`). In return there are fewer dependencies, and no synchronous `supabase-py` client blocking FastAPI's event loop.
+
+</details>
+
+<details>
+<summary><b>Why one VPS instead of Vercel and Railway?</b></summary>
+<br>
+
+**Context.** `POST /index` answers `202` and keeps working in a background task, so the RAG service needs a process that stays up no matter what.
+
+**Decision.** Both services run with Docker Compose on one VPS behind nginx. Only `web` is published, on `127.0.0.1`; `rag-service` has no published port, so the internal token is not its only defence. Images are built and tested in GitHub Actions and pulled from GHCR, never compiled on the server.
+
+**Trade-off.** No preview deploys, CDN or autoscaling, and deploying is a manual `docker compose pull`. Every commit on `main` has its own image tag, so rollback is pulling an older SHA.
+
+</details>
+
+<details>
+<summary><b>How are users kept apart?</b></summary>
+<br>
+
+**Context.** `rag-service` talks to Supabase with the `service_role` key, which bypasses Row Level Security by design.
+
+**Decision.** `repos`, `code_chunks` and `indexed_files` all carry a non-null `user_id`. `match_chunks` filters on `repo_id` and `user_id` inside SQL, and `user_id` is always taken from the session. RLS policies (`auth.uid() = user_id`) cover everything the web app reads with the anon key.
+
+**Trade-off.** On the RAG path isolation depends on that filter rather than on RLS, so it is tested on both sides: pytest checks that `user_id` reaches `match_chunks`, and `supabase/tests/rls_isolation.sql` checks the policies. A repository that belongs to someone else returns the same `404` as one that does not exist.
+
+</details>
+
+<details>
+<summary><b>Why incremental reindexing by blob SHA?</b></summary>
+<br>
+
+**Context.** Reindexing used to delete everything and embed the whole repository again, even when one file had changed. With that, "unlimited re-indexing" could not be offered on any plan.
+
+**Decision.** The GitHub tree already lists each file's git blob SHA. It is compared with `indexed_files`: an unchanged SHA is skipped without downloading the file, a changed one has its chunks replaced, a path that disappeared has its chunks deleted. The SHA is recorded only after that file's chunks are saved.
+
+**Trade-off.** There is no rollback: a run that fails midway leaves partial state, and the next run redoes every file without a recorded SHA. If chunking parameters change, `force: true` is needed, because SHAs cannot tell that stored chunks are stale.
+
+</details>
+
+<details>
+<summary><b>Why fixed-size chunks of 2000 characters with 200 overlap?</b></summary>
+<br>
+
+**Context.** Code has to be cut into pieces that fit the embedding model and still carry enough context.
+
+**Decision.** Fixed windows measured in characters, overlapping by 200. Each chunk also stores `start_line` and `end_line`, computed while the whole file is still in memory, so a source can link to `#L120-L160` on GitHub.
+
+**Trade-off.** Splitting on function boundaries would need a parser per language, and counting tokens would need a tokenizer. Characters are Python code points, so offsets drift from JavaScript's UTF-16 indexes in files with emoji; the UI shows the stored excerpt instead of slicing files by offset.
+
+</details>
+
+<details>
+<summary><b>Why top-k 5 with no similarity threshold?</b></summary>
+<br>
+
+**Context.** Relevant chunks scored around 0.65 to 0.7 and irrelevant ones around 0.4 to 0.5, which is not a stable line to cut on.
+
+**Decision.** The 5 closest chunks always go into the prompt, and the model decides what is useful. The system instruction has five rules: grounding, admit missing information, cite file paths, answer in the question's language, be concise.
+
+**Trade-off.** Some irrelevant context reaches the model. In exchange, the cost of a question is bounded: at most five chunks of 2000 characters.
+
+</details>
+
+<details>
+<summary><b>Why SSE with named events instead of WebSockets?</b></summary>
+<br>
+
+**Context.** A question is one request and one streamed answer; nothing needs to flow back while it is generated.
+
+**Decision.** `POST /query` emits `sources` first, then `token` events, then `done`, or `error` if generation fails mid-stream. The Next.js route hands `upstream.body` to the browser without reading it, and nginx has `proxy_buffering off` on `/api/query`.
+
+**Trade-off.** `EventSource` only supports GET, and the question travels in the body, so the browser reads the stream with `fetch` and a small SSE parser in `lib/sse.ts`.
+
+</details>
+
+<details>
+<summary><b>The 429s were tokens per minute, not requests</b></summary>
+<br>
+
+**Context.** Indexing failed with `429` from Gemini. The quota panel showed 37 of 100 requests per minute, but 39.6K of 30K tokens per minute.
+
+**Decision.** One limiter for the whole process caps embeddings at 25,000 tokens per minute over a sliding window, estimating 3 characters per token, and retries on `429`. Embeddings go out in batches of 25 so the free tier's daily request limit is not exhausted either.
+
+**Trade-off.** Concurrent indexing jobs share the budget and wait for each other. The limiter lives in memory, which is why `rag-service` runs a single uvicorn worker; more replicas would need a shared counter.
+
+</details>
+
+<br>
+
+<a id="stack"></a>
+
+<img src="docs/readme/section-07.svg" width="100%" alt="07 / Stack: Every layer, by name">
+
+<img src="docs/readme/stack.svg" width="100%" alt="Product, apps/web: Next.js 16.2, React 19.2, TypeScript 5, Tailwind CSS 4, @supabase/ssr 0.12, stripe 22. RAG, apps/rag-service: Python 3.12, FastAPI 0.116+, httpx 0.28+, pydantic-settings 2.10+, uvicorn 0.35+, no LangChain and no SDKs. Data and AI: Postgres with pgvector, HNSW cosine index, Supabase Auth with RLS, gemini-embedding-2, gemini-3.1-flash-lite, 5 SQL migrations. Ship and test: Docker Compose, nginx with certbot, GitHub Actions, GHCR images, pytest, Vitest with ESLint 9.">
+
+<br>
+
+<a id="quickstart"></a>
+
+<img src="docs/readme/section-08.svg" width="100%" alt="08 / Quickstart: Run it yourself">
+
+<img src="docs/readme/terminal.svg" width="100%" alt="git clone https://github.com/todfilipe/rag-codebase-chat.git, cd rag-codebase-chat, cp .env.example .env and fill the two app env files, docker compose up --build. The web app is on http://localhost:3000.">
+
+### Requirements
+
+- Docker, or Node.js 22 and Python 3.11+ (CI and the image use 3.12)
+- A Supabase project, a Gemini API key, a GitHub token that can read public repositories, and a Stripe account in test mode
+
+### 1. Database
+
+Apply the migrations in order, in the Supabase SQL editor or with `psql` and your database connection string:
 
 ```bash
+for f in supabase/migrations/*.sql; do psql "$DATABASE_URL" -f "$f"; done
+```
+
+Paid plans only show a Subscribe button once they point at a Stripe price:
+
+```sql
+update plans set stripe_price_id = 'price_...' where id = 'pro';
+update plans set stripe_price_id = 'price_...' where id = 'ultra';
+```
+
+For GitHub login, enable the GitHub provider in Supabase under Authentication, Providers. The OAuth app credentials live there, not in the env files.
+
+### 2. Environment
+
+Generate one internal token and use the same value in both services:
+
+```bash
+openssl rand -hex 32
+```
+
+`apps/rag-service/.env`
+
+```dotenv
+GEMINI_API_KEY=
+GITHUB_TOKEN=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+RAG_SERVICE_INTERNAL_TOKEN=
+```
+
+`apps/web/.env.local`
+
+```dotenv
+SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RAG_SERVICE_URL=http://localhost:8000
+RAG_SERVICE_INTERNAL_TOKEN=
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+`.env` at the root, read only by Docker Compose. `NEXT_PUBLIC_*` values are baked into the Next.js build, so they are passed as build args:
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+The full reference, with what each variable is for, is in [`docs/ENV.md`](docs/ENV.md).
+
+### 3. Run
+
+**With Docker Compose.** `web` is published on `127.0.0.1:3000` (override with `WEB_PORT`), and `rag-service` stays on the internal network with `RAG_SERVICE_URL` set to `http://rag-service:8000` for you.
+
+```bash
+docker compose up --build
+```
+
+**Or each app on its own.** `rag-service`:
+
+```bash
+cd apps/rag-service
+python -m venv .venv
+source .venv/bin/activate
+pip install ".[dev]"
+uvicorn app.main:app --reload --port 8000
+```
+
+`web`, in a second terminal:
+
+```bash
+cd apps/web
+npm ci
 npm run dev
 ```
 
-A aplicação fica disponível em [http://localhost:3000](http://localhost:3000).
-
-### Endpoints de diagnóstico
-
-O pipeline é atualmente exercitado através de *endpoints* de diagnóstico (rotas `GET`). Estão marcados no código para serem removidos quando a interface final de chat existir.
-
-**Indexar um repositório** (lê, faz *chunk*, gera *embeddings* e grava tudo):
+To receive subscription webhooks locally, forward them with the Stripe CLI and put the signing secret it prints in `STRIPE_WEBHOOK_SECRET`:
 
 ```bash
-curl "http://localhost:3000/api/test-indexer?url=https://github.com/owner/repo"
+stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-Devolve o `repoId` gerado, número de ficheiros indexados e de *chunks* criados. Guarda o `repoId` para os passos seguintes.
-
-**Recuperar os chunks mais relevantes para uma pergunta:**
+### 4. Test
 
 ```bash
-curl "http://localhost:3000/api/test-retriever?q=como%20funciona%20o%20login&repoId=<REPO_ID>"
+cd apps/rag-service && pytest
 ```
-
-**Correr o pipeline RAG completo (recuperação + geração da resposta):**
 
 ```bash
-curl "http://localhost:3000/api/test-generator?q=como%20funciona%20o%20login&repoId=<REPO_ID>"
+cd apps/web && npm run lint && npm test
 ```
 
-Devolve a resposta gerada e a lista de ficheiros usados como fonte, cada um com o respetivo *score* de similaridade.
+The RLS script creates two users, asserts what each one can read and change, and rolls everything back. Run it against a development database:
 
-Existem ainda *endpoints* de diagnóstico mais granulares para testar peças isoladas: `test-embedding`, `test-chunker`, `test-github`, `test-github-list` e `test-github-file`.
-
-## Estrutura de pastas
-
-```
-rag-codebase-chat/
-├── app/                      # Next.js App Router
-│   ├── api/                  # Endpoints de diagnóstico (um por peça do pipeline)
-│   │   ├── test-embedding/   #   → gera embedding de um texto
-│   │   ├── test-chunker/     #   → parte texto em chunks
-│   │   ├── test-github/      #   → parsing de URL do GitHub
-│   │   ├── test-github-list/ #   → lista ficheiros de um repo
-│   │   ├── test-github-file/ #   → lê o conteúdo de um ficheiro
-│   │   ├── test-indexer/     #   → pipeline de indexação completo
-│   │   ├── test-retriever/   #   → vector search por repo
-│   │   └── test-generator/   #   → pipeline RAG end-to-end
-│   ├── layout.tsx            # Layout raiz da aplicação
-│   ├── page.tsx              # Página inicial
-│   └── globals.css           # Estilos globais (Tailwind)
-├── lib/                      # Lógica do pipeline RAG (construída de raiz)
-│   ├── github.ts             # Cliente GitHub: parsing, listagem, leitura, filtragem
-│   ├── chunker.ts            # Divisão de texto em chunks com sobreposição
-│   ├── gemini.ts             # Geração de embeddings via Gemini
-│   ├── indexer.ts            # Orquestra indexação: fetch → chunk → embed → gravar
-│   ├── retriever.ts          # Vector search (match_chunks) filtrado por repo_id
-│   └── generator.ts          # Geração da resposta final com citação de fontes
-├── decisions.md              # Registo das decisões técnicas e respetivos trade-offs
-├── package.json
-└── tsconfig.json
+```bash
+psql "$DATABASE_URL" -f supabase/tests/rls_isolation.sql
 ```
 
-## Variáveis de ambiente
+<br>
 
-Todas são lidas do `.env.local` (nunca commitado). **Não incluas valores reais no controlo de versões.**
+<a id="quality"></a>
 
-| Variável | Descrição | Onde é usada |
-|----------|-----------|--------------|
-| `GEMINI_API_KEY` | Chave da API Google Gemini, usada para gerar *embeddings* e respostas. | [`lib/gemini.ts`](lib/gemini.ts), [`lib/generator.ts`](lib/generator.ts) |
-| `GITHUB_TOKEN` | GitHub Personal Access Token para ler repositórios via API. | [`lib/github.ts`](lib/github.ts) |
-| `SUPABASE_URL` | URL do projeto Supabase. | [`lib/indexer.ts`](lib/indexer.ts), [`lib/retriever.ts`](lib/retriever.ts) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave *service role* do Supabase (acesso total; usar apenas no servidor). | [`lib/indexer.ts`](lib/indexer.ts), [`lib/retriever.ts`](lib/retriever.ts) |
+<img src="docs/readme/section-09.svg" width="100%" alt="09 / Quality: Tested, isolated, rate limited">
 
-> ⚠️ A `SUPABASE_SERVICE_ROLE_KEY` dá acesso total à base de dados e ignora as *Row Level Security policies*. Nunca a exponhas no cliente nem a versiones. Se alguma destas chaves for exposta acidentalmente, **rota-a de imediato** no respetivo painel.
+<img src="docs/readme/quality.svg" width="100%" alt="CI gate before every image: pytest, ESLint and Vitest run on each push to main. rag-service tests with pytest: chunker, internal token, repo and user isolation. Proxy route tests with Vitest: /api/index, /api/query, index status and the rate limiter. RLS isolation script: SQL asserts for two users in a rolled-back transaction. rag-service not reachable: no published port, verified from outside the VPS. Constant-time internal token: secrets.compare_digest, only /health is open. Per-user rate limits: 10 questions and 5 index requests per minute. No existence leaks: another user's repo gets the same 404 as a missing one.">
 
-## Scripts disponíveis
+> [!NOTE]
+> The RLS script is run by hand against a database; CI runs pytest, ESLint and Vitest only. The per-user rate limiter keeps its counters in memory, which fits the single `web` container this project deploys.
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Arranca o servidor de desenvolvimento em `localhost:3000`. |
-| `npm run build` | Compila a aplicação para produção. |
-| `npm run start` | Serve a *build* de produção. |
-| `npm run lint` | Corre o ESLint sobre o projeto. |
+<br>
 
-## Testes
+<a id="roadmap"></a>
 
-Atualmente **não existe uma suíte de testes automatizados** (nenhum *runner* como Jest ou Vitest está configurado no `package.json`).
+<img src="docs/readme/section-10.svg" width="100%" alt="10 / Roadmap: Where the project stands">
 
-A verificação é feita manualmente através dos *endpoints* de diagnóstico descritos na secção [Correr localmente](#correr-localmente), que exercitam cada peça do pipeline de forma isolada e o fluxo completo end-to-end.
+<img src="docs/readme/roadmap.svg" width="100%" alt="Phase 0, monorepo skeleton: 6 of 6. Phase 1, RAG pipeline ported to Python: 9 of 9. Phase 2, web and rag-service contract: 6 of 6. Phase 3, chat interface: 4 of 4. Phase 4, auth and per-user isolation: 5 of 5. Phase 5, dashboard and billing: 6 of 6. Phase 6, quality, deploy and launch: 7 of 10.">
 
-## Roadmap
+Still open in phase 6, from [`docs/ROADMAP.md`](docs/ROADMAP.md):
 
-> Esta secção reflete o âmbito documentado em [`CLAUDE.md`](CLAUDE.md) e [`decisions.md`](decisions.md). Os pontos abaixo **ainda não estão implementados** no código.
+- [ ] Review `decisions.md` and `LOGICA-DO-PROJETO.md` against the current code
+- [ ] Write up answers to the architecture interview questions
+- [ ] Final visual polish, with a recorded demo in this README
 
-- Interface de chat (substituindo os *endpoints* de diagnóstico).
-- *Streaming* das respostas via Server-Sent Events (SSE).
-- Autenticação e dashboard de utilizador.
-- *Billing* / planos.
-- *Row Level Security* no Supabase e reforço do isolamento por utilizador.
+<br>
 
-## Como contribuir
+<img src="docs/readme/footer.svg" width="100%" alt="RAG Codebase Chat. Retrieval-augmented answers, grounded in real code. Built by Filipe, open source on GitHub. reposeer.me">
 
-Este é um projeto de portfólio de aprendizagem, com foco em construir cada peça do RAG de raiz e compreendê-la a fundo. Se quiseres contribuir:
-
-1. Faz *fork* do repositório e cria um *branch* descritivo (`feat/...` ou `fix/...`).
-2. Garante que `npm run lint` passa sem erros.
-3. Mantém o código **simples e comentado no "porquê"**, sem abstrações prematuras e sem `any` no TypeScript (convenções seguidas em todo o projeto).
-4. Se tomares uma decisão técnica não trivial, regista-a em [`decisions.md`](decisions.md).
-5. Abre um *Pull Request* a descrever a mudança e o raciocínio.
-
-## Licença
-
-**[PLACEHOLDER: nenhuma licença foi encontrada no repositório.]** Sem um ficheiro `LICENSE`, o código é, por defeito, "todos os direitos reservados". Adiciona uma licença (ex. MIT) se pretenderes permitir reutilização.
-
-## Autor
-
-**[PLACEHOLDER: autor não declarado no código.]** O *commit history* atribui o trabalho a *Filipe*; confirma e preenche aqui o nome/contacto que preferires expor publicamente.
+<div align="center">
+<sub>
+<a href="https://reposeer.me">Website</a> ·
+<a href="https://github.com/todfilipe/rag-codebase-chat">Source</a> ·
+<a href="docs/">Docs</a> ·
+<a href="decisions.md">Decisions</a> ·
+<a href="docs/DEPLOY.md">Deploy</a> ·
+<a href="#top">Back to top</a>
+</sub>
+</div>

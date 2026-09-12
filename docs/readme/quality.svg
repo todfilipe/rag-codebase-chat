@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="300" viewBox="0 0 880 300" role="img" aria-labelledby="title desc">
+  <title id="title">Quality and security checklist</title>
+  <desc id="desc">CI gate before every image: pytest, ESLint and Vitest run on each push to main. rag-service tests with pytest: chunker, internal token, repo and user isolation. Proxy route tests with Vitest: /api/index, /api/index/[id]/status, /api/query and the rate limiter. RLS isolation script: SQL asserts for two users in a rolled-back transaction. rag-service not reachable: no published port, verified from outside the VPS. Constant-time internal token: secrets.compare_digest, only /health is open. Per-user rate limits: 10 questions and 5 index requests per minute. No existence leaks: another user's repo gets the same 404 as a missing one.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+      .tick { stroke-dasharray: 14; stroke-dashoffset: 14; animation: draw 0.6s ease-out forwards; }
+      .d1 { animation-delay: 0.2s; } .d2 { animation-delay: 0.35s; } .d3 { animation-delay: 0.5s; } .d4 { animation-delay: 0.65s; }
+      .d5 { animation-delay: 0.8s; } .d6 { animation-delay: 0.95s; } .d7 { animation-delay: 1.1s; } .d8 { animation-delay: 1.25s; }
+      @keyframes draw { to { stroke-dashoffset: 0; } }
+      @media (prefers-reduced-motion: reduce) { .tick { animation: none; stroke-dashoffset: 0; } }
+    </style>
+  </defs>
+  <rect x="0.5" y="0.5" width="879" height="299" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <line x1="440.5" y1="28" x2="440.5" y2="272" stroke="#30363d"/>
+
+  <g class="sans">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="28.5" y="33.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d1" d="M33 43.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="28.5" y="97.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d2" d="M33 107.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="28.5" y="161.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d3" d="M33 171.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="28.5" y="225.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d4" d="M33 235.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="464.5" y="33.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d5" d="M469 43.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="464.5" y="97.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d6" d="M469 107.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="464.5" y="161.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d7" d="M469 171.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+      <rect x="464.5" y="225.5" width="19" height="19" rx="5" stroke="#3fb950" stroke-opacity="0.5"/>
+      <path class="tick d8" d="M469 235.5l3.5 3.5 7-7" stroke="#3fb950" stroke-width="1.8"/>
+    </g>
+
+    <text x="62" y="47" font-size="14" font-weight="600" fill="#e6edf3">CI gate before every image</text>
+    <text x="62" y="68" font-size="12" fill="#8b949e">pytest, ESLint and Vitest run on each push to main.</text>
+    <text x="62" y="111" font-size="14" font-weight="600" fill="#e6edf3">rag-service tests <tspan class="mono" font-size="12" fill="#8b949e">pytest</tspan></text>
+    <text x="62" y="132" font-size="12" fill="#8b949e">Chunker, internal token, repo and user isolation.</text>
+    <text x="62" y="175" font-size="14" font-weight="600" fill="#e6edf3">Proxy route tests <tspan class="mono" font-size="12" fill="#8b949e">vitest</tspan></text>
+    <text x="62" y="196" font-size="12" fill="#8b949e"><tspan class="mono">/api/index</tspan>, <tspan class="mono">/api/query</tspan>, index status and the rate limiter.</text>
+    <text x="62" y="239" font-size="14" font-weight="600" fill="#e6edf3">RLS isolation script</text>
+    <text x="62" y="260" font-size="12" fill="#8b949e">SQL asserts for two users in a rolled-back transaction.</text>
+
+    <text x="498" y="47" font-size="14" font-weight="600" fill="#e6edf3">rag-service not reachable</text>
+    <text x="498" y="68" font-size="12" fill="#8b949e">No published port, verified from outside the VPS.</text>
+    <text x="498" y="111" font-size="14" font-weight="600" fill="#e6edf3">Constant-time internal token</text>
+    <text x="498" y="132" font-size="12" fill="#8b949e"><tspan class="mono">secrets.compare_digest</tspan>, only <tspan class="mono">/health</tspan> is open.</text>
+    <text x="498" y="175" font-size="14" font-weight="600" fill="#e6edf3">Per-user rate limits</text>
+    <text x="498" y="196" font-size="12" fill="#8b949e">10 questions and 5 index requests per minute.</text>
+    <text x="498" y="239" font-size="14" font-weight="600" fill="#e6edf3">No existence leaks</text>
+    <text x="498" y="260" font-size="12" fill="#8b949e">Another user's repo gets the same 404 as a missing one.</text>
+  </g>
+</svg>

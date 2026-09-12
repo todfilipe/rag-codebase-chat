@@ -138,7 +138,7 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 - [x] `Dockerfile` para cada serviço e um `docker-compose.yml` que levante os dois na VPS, ambos a apontar para o mesmo Supabase de produção.
 - [x] Publicar só o `web` através do nginx (reverse proxy + TLS com certbot). O `rag-service` fica na rede interna do compose, sem porta publicada, e o `RAG_SERVICE_URL` passa a ser um endereço interno.
 - [x] Confirmar que o nginx não faz buffering do SSE de `POST /api/query` (`proxy_buffering off`), senão a resposta chega toda de uma vez em vez de token a token.
-- [ ] Definir e documentar o processo de deploy (build na VPS a partir do git, ou imagens construídas em CI e puxadas por SSH) e o arranque automático depois de um reboot.
+- [x] Definir e documentar o processo de deploy (build na VPS a partir do git, ou imagens construídas em CI e puxadas por SSH) e o arranque automático depois de um reboot.
 - [x] Testes automatizados mínimos: pelo menos os módulos críticos do `rag-service` (chunking, isolamento por `repo_id`/`user_id`) e os Route Handlers de proxy no `web`.
 - [x] Revisão de segurança: `service_role_key` nunca chega ao cliente, RLS ativo e testado, token interno não exposto, `rag-service` sem resposta a partir do exterior da VPS (testar de fora, não assumir), rate limiting básico nos endpoints públicos.
 - [ ] Rever `decisions.md` e `LOGICA-DO-PROJETO.md`, garantir que refletem o estado real do código (não o que foi planeado e mudou).

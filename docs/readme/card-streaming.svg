@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="172" viewBox="0 0 280 172" role="img" aria-labelledby="title desc">
+  <title id="title">Streaming answers</title>
+  <desc id="desc">Tokens arrive over Server-Sent Events, proxied by Next.js without buffering and cancelled when the tab closes.</desc>
+  <rect x="0.5" y="0.5" width="279" height="171" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <rect x="22.5" y="22.5" width="35" height="35" rx="6" fill="#161b22" stroke="#30363d"/>
+  <g transform="translate(31 31) scale(0.75)" fill="none" stroke="#f8a71d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l3-7 4 14 3-7h5"/></g>
+  <text x="22" y="86" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="-0.2" fill="#e6edf3">Streaming answers</text>
+  <text x="22" y="112" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12.5" fill="#8b949e">Tokens arrive over Server-Sent Events,</text>
+  <text x="22" y="131" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12.5" fill="#8b949e">proxied by Next.js without buffering</text>
+  <text x="22" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" font-size="12.5" fill="#8b949e">and cancelled when the tab closes.</text>
+</svg>
