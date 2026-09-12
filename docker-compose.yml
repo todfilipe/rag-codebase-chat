@@ -1,5 +1,6 @@
 services:
   rag-service:
+    image: ghcr.io/todfilipe/rag-codebase-chat-rag-service:${IMAGE_TAG:-latest}
     build: ./apps/rag-service
     env_file: ./apps/rag-service/.env
     healthcheck:
@@ -15,6 +16,7 @@ services:
     restart: unless-stopped
 
   web:
+    image: ghcr.io/todfilipe/rag-codebase-chat-web:${IMAGE_TAG:-latest}
     build:
       context: ./apps/web
       args:

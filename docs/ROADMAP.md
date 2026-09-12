@@ -140,7 +140,7 @@ Cada fase tem: objetivo, o que precisa de estar entendido antes de avançar (coe
 - [x] Confirmar que o nginx não faz buffering do SSE de `POST /api/query` (`proxy_buffering off`), senão a resposta chega toda de uma vez em vez de token a token.
 - [ ] Definir e documentar o processo de deploy (build na VPS a partir do git, ou imagens construídas em CI e puxadas por SSH) e o arranque automático depois de um reboot.
 - [x] Testes automatizados mínimos: pelo menos os módulos críticos do `rag-service` (chunking, isolamento por `repo_id`/`user_id`) e os Route Handlers de proxy no `web`.
-- [ ] Revisão de segurança: `service_role_key` nunca chega ao cliente, RLS ativo e testado, token interno não exposto, `rag-service` sem resposta a partir do exterior da VPS (testar de fora, não assumir), rate limiting básico nos endpoints públicos.
+- [x] Revisão de segurança: `service_role_key` nunca chega ao cliente, RLS ativo e testado, token interno não exposto, `rag-service` sem resposta a partir do exterior da VPS (testar de fora, não assumir), rate limiting básico nos endpoints públicos.
 - [ ] Rever `decisions.md` e `LOGICA-DO-PROJETO.md`, garantir que refletem o estado real do código (não o que foi planeado e mudou).
 - [ ] Preparar respostas às "Perguntas de Entrevista" do `CLAUDE.md`, agora incluindo perguntas novas sobre a arquitetura poliglota: "porque separaste o RAG em Python?", "como comunicam os dois serviços?", "o que acontece se o rag-service cair?".
 - [ ] Polish visual final, README atualizado com screenshots/GIF de demo.
